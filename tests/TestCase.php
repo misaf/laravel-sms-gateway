@@ -13,8 +13,6 @@ abstract class TestCase extends TestbenchTestCase
 {
     /**
      * Setup the test environment.
-     *
-     * @return void
      */
     #[Override]
     protected function setUp(): void
