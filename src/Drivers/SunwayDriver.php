@@ -13,9 +13,9 @@ final class SunwayDriver implements SmsGatewayHandlerInterface
     public function send(): PendingRequest
     {
         return Http::withUrlParameters([
-            'UserName' => config('sms-gateway.drivers.sunway.username'),
-            'Password' => config('sms-gateway.drivers.sunway.password'),
-        ])->baseUrl('https://sms.sunwaysms.com/smsws/')
+            'UserName' => config('sms_gateway.drivers.sunway.username'),
+            'Password' => config('sms_gateway.drivers.sunway.password'),
+        ])->baseUrl(config('sms_gateway.drivers.sunway.gateway', 'https://sms.sunwaysms.com/smsws/'))
             ->timeout(10)
             ->connectTimeout(5);
     }
