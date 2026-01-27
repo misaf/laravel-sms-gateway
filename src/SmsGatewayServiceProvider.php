@@ -15,8 +15,6 @@ final class SmsGatewayServiceProvider extends ServiceProvider implements Deferra
      */
     public function boot(): void
     {
-        $this->registerSmsGatewayManager();
-
         $this->publishSmsGatewayConfig();
     }
 
@@ -35,15 +33,12 @@ final class SmsGatewayServiceProvider extends ServiceProvider implements Deferra
      */
     public function register(): void
     {
-        $this->registerSmsGatewayManager();
-
         $this->registerSmsGatewayConfig();
+        $this->registerSmsGatewayManager();
     }
 
     /**
-     * publish the SMS Gateway config.
-     *
-     * @return void
+     * Publish the SMS Gateway config.
      */
     private function publishSmsGatewayConfig(): void
     {
@@ -54,21 +49,17 @@ final class SmsGatewayServiceProvider extends ServiceProvider implements Deferra
 
     /**
      * Register the SMS Gateway config.
-     *
-     * @return void
      */
     private function registerSmsGatewayConfig(): void
     {
         $this->mergeConfigFrom(
             __DIR__ . '/../config/sms_gateway.php',
-            'sms-gateway',
+            'sms_gateway',
         );
     }
 
     /**
      * Register the SMS Gateway manager instance.
-     *
-     * @return void
      */
     private function registerSmsGatewayManager(): void
     {
