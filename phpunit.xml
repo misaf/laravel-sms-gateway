@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.3/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         cacheResult="false"
+>
+    <testsuites>
+        <testsuite name="Test Suite">
+            <directory suffix="Test.php">./tests</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory suffix=".php">./src</directory>
+        </include>
+    </source>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="SMS_GATEWAY_GHASEDAK_APIKEY" value="f23c36b2b179561d5c5878ed0d559cac152892a21cd519b90edebb99be9b8214"/>
+        <env name="SMS_GATEWAY_SUNWAY_USERNAME" value="username"/>
+        <env name="SMS_GATEWAY_SUNWAY_PASSWORD" value="password"/>
+    </php>
+</phpunit>
