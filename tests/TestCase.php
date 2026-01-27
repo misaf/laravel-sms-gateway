@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tests;
+namespace Misaf\LaravelSmsGateway\Tests;
 
 use Illuminate\Support\Facades\Http;
+use Misaf\LaravelSmsGateway\SmsGatewayServiceProvider;
 use Orchestra\Testbench\TestCase as TestbenchTestCase;
 use Override;
-use Misaf\LaravelSmsGateway\SmsGatewayServiceProvider;
 
 abstract class TestCase extends TestbenchTestCase
 {
