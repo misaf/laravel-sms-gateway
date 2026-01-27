@@ -12,10 +12,9 @@ final class GhasedakDriver implements SmsGatewayHandlerInterface
 {
     public function send(): PendingRequest
     {
-        return Http::withUrlParameters([
-            'UserName' => config('sms-gateway.drivers.ghasedak.username'),
-            'Password' => config('sms-gateway.drivers.ghasedak.password'),
-        ])->baseUrl('https://sms.sunwaysms.com/smsws/')
+        return Http::withHeaders([
+            'apikey' => config('sms_gateway.drivers.ghasedak.apiKey'),
+        ])->baseUrl('https://api.ghasedak.me/v2/')
             ->timeout(10)
             ->connectTimeout(5);
     }
