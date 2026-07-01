@@ -4,33 +4,26 @@ declare(strict_types=1);
 
 namespace Misaf\LaravelSmsGateway;
 
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Manager;
-use Misaf\LaravelSmsGateway\Drivers\GhasedakDriver;
-use Misaf\LaravelSmsGateway\Drivers\Sunway\SunwayDriver;
+use InvalidArgumentException;
+use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
 final class SmsGatewayManager extends Manager
 {
-    /**
-     * Get the default SMS Gateway driver name.
-     */
     public function getDefaultDriver(): string
     {
-        return $this->config->get('sms_gateway.default');
+        return Config::string('sms_gateway.default', 'ghasedak');
     }
 
-    /**
-     * Create an instance of the Ghasedak driver.
-     */
-    protected function createGhasedakDriver(): GhasedakDriver
+    protected function createDriver($driver): SmsGatewayHandlerInterface
     {
-        return new GhasedakDriver();
-    }
+        $resolvedDriver = parent::createDriver($driver);
 
-    /**
-     * Create an instance of the Sunway driver.
-     */
-    protected function createSunwayDriver(): SunwayDriver
-    {
-        return new SunwayDriver();
+        if ( ! $resolvedDriver instanceof SmsGatewayHandlerInterface) {
+            throw new InvalidArgumentException("Driver [{$driver}] must implement [" . SmsGatewayHandlerInterface::class . '].');
+        }
+
+        return $resolvedDriver;
     }
 }

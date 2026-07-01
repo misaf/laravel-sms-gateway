@@ -2,19 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Misaf\LaravelSmsGateway\Drivers;
+namespace Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
-final class GhasedakDriver implements SmsGatewayHandlerInterface
+final class ConfigurableDriver implements SmsGatewayHandlerInterface
 {
     public function send(): PendingRequest
     {
-        return Http::withHeaders([
-            'apikey' => config('sms_gateway.drivers.ghasedak.apiKey'),
-        ])->baseUrl('https://api.ghasedak.me/v2/')
+        return Http::baseUrl('https://custom.example.com')
             ->timeout(10)
             ->connectTimeout(5);
     }

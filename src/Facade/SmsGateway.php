@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Misaf\LaravelSmsGateway\Facade;
 
 use Illuminate\Support\Facades\Facade;
+use Misaf\LaravelSmsGateway\SmsGatewayManager;
 
+/**
+ * @method static \Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface driver(?string $driver = null)
+ * @method static SmsGatewayManager extend(string $driver, \Closure $callback)
+ */
 final class SmsGateway extends Facade
 {
-    /**
-     * Get the registered name of the component.
-     *
-     * @return string
-     */
-    protected static function getFacadeAccessor()
+    protected static function getFacadeAccessor(): string
     {
         return 'sms-gateway';
     }

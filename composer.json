@@ -1,46 +1,50 @@
 {
 	"name": "misaf/laravel-sms-gateway",
 	"description": "Supercharge your Laravel applications with our seamless SMS Gateway integration!",
+    "license": "MIT",
 	"keywords": [
-		"laravel",
-		"sms",
-		"gateway",
-		"messaging",
-		"notification",
-		"alerts",
-		"integration"
-	],
-	"homepage": "https://github.com/misaf/sms-gateway",
-	"support": {
-		"issues": "https://github.com/misaf/laravel-sms-gateway/issues",
-		"source": "https://github.com/misaf/laravel-sms-gateway"
-	},
-	"license": "MIT",
-	"authors": [
-		{
-			"name": "Ehsan Mahmoodi",
-			"email": "misaf.1990@gmail.com"
-		}
-	],
+        "laravel",
+        "misaf",
+        "vendra",
+        "sms-gateway"
+    ],
+    "homepage": "https://github.com/misaf/laravel-sms-gateway",
+    "support": {
+        "issues": "https://github.com/misaf/laravel-sms-gateway/issues",
+        "source": "https://github.com/misaf/laravel-sms-gateway"
+    },
+    "authors": [
+        {
+            "name": "Ehsan Mahmoodi",
+            "email": "misaf.1990@gmail.com",
+            "role": "Developer"
+        }
+    ],
     "require": {
-        "php": "^8.3",
-        "illuminate/support": "^10.0|^11.0|^12.0"
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "spatie/laravel-package-tools": "^1.92"
     },
     "require-dev": {
 		"guzzlehttp/guzzle": "^7.10",
-		"laravel/pint": "^1.27.0",
-		"nunomaduro/collision": "^8.8.3",
-		"pestphp/pest-plugin-arch": "^4.0",
-		"pestphp/pest-plugin-laravel": "^4.0",
-		"pestphp/pest-plugin-type-coverage": "^4.0.3",
-		"phpstan/extension-installer": "^1.4.3",
-		"phpstan/phpstan-deprecation-rules": "^2.0.3",
-		"phpstan/phpstan-phpunit": "^2.0.12",
-        "pestphp/pest": "^4.3.1",
-        "orchestra/testbench": "^10.9"
-    },
+        "fakerphp/faker": "^1.24.1",
+        "larastan/larastan": "^3.9.2",
+        "laravel/boost": "^2.0.6",
+        "laravel/pint": "^1.27",
+        "mockery/mockery": "^1.6.12",
+        "nunomaduro/collision": "^8.8.3",
+        "orchestra/testbench": "^10.9|^11.0",
+        "pestphp/pest": "^4.3.2",
+        "pestphp/pest-plugin-arch": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0",
+        "pestphp/pest-plugin-profanity": "^4.2.1",
+        "pestphp/pest-plugin-type-coverage": "^4.0.3"
+	},
     "scripts": {
-        "test": "pest"
+        "analyse": "vendor/bin/phpstan analyse",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
     },
 	"autoload": {
 		"psr-4": {
@@ -55,11 +59,15 @@
 			]
 		}
 	},
-	"config": {
-		"sort-packages": true,
-		"allow-plugins": {
-			"pestphp/pest-plugin": true,
-			"phpstan/extension-installer": true
-		}
-	}
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

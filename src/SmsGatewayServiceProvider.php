@@ -5,64 +5,20 @@ declare(strict_types=1);
 namespace Misaf\LaravelSmsGateway;
 
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Contracts\Support\DeferrableProvider;
-use Illuminate\Support\ServiceProvider;
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
-final class SmsGatewayServiceProvider extends ServiceProvider implements DeferrableProvider
+final class SmsGatewayServiceProvider extends PackageServiceProvider
 {
-    /**
-     * Bootstrap any package services.
-     */
-    public function boot(): void
+    public function configurePackage(Package $package): void
     {
-        $this->publishSmsGatewayConfig();
+        $package
+            ->name('laravel-sms-gateway')
+            ->hasConfigFile('sms_gateway');
     }
 
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array<int, string>
-     */
-    public function provides(): array
+    public function packageRegistered(): void
     {
-        return ['sms-gateway'];
-    }
-
-    /**
-     * Register the service provider.
-     */
-    public function register(): void
-    {
-        $this->registerSmsGatewayConfig();
-        $this->registerSmsGatewayManager();
-    }
-
-    /**
-     * Publish the SMS Gateway config.
-     */
-    private function publishSmsGatewayConfig(): void
-    {
-        $this->publishes([
-            __DIR__ . '/../config/sms_gateway.php' => config_path('sms_gateway.php'),
-        ]);
-    }
-
-    /**
-     * Register the SMS Gateway config.
-     */
-    private function registerSmsGatewayConfig(): void
-    {
-        $this->mergeConfigFrom(
-            __DIR__ . '/../config/sms_gateway.php',
-            'sms_gateway',
-        );
-    }
-
-    /**
-     * Register the SMS Gateway manager instance.
-     */
-    private function registerSmsGatewayManager(): void
-    {
-        $this->app->singleton('sms-gateway', fn(Application $app) => new SmsGatewayManager($app));
+        $this->app->singleton('sms-gateway', fn(Application $app): SmsGatewayManager => new SmsGatewayManager($app));
     }
 }

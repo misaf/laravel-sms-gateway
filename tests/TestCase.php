@@ -11,9 +11,6 @@ use Override;
 
 abstract class TestCase extends TestbenchTestCase
 {
-    /**
-     * Setup the test environment.
-     */
     #[Override]
     protected function setUp(): void
     {
