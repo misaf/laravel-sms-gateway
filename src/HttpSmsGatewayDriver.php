@@ -21,21 +21,11 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
         $request = Http::baseUrl($this->gateway())
             ->timeout(Config::integer('sms_gateway.defaults.timeout'))
             ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'))
+            ->withHeaders($this->headers())
+            ->withQueryParameters($this->queryParameters())
             ->beforeSending(function (Request $request) use (&$sentRequest): void {
                 $sentRequest = $request;
             });
-
-        $headers = $this->headers();
-
-        if ($headers !== []) {
-            $request = $request->withHeaders($headers);
-        }
-
-        $queryParameters = $this->queryParameters();
-
-        if ($queryParameters !== []) {
-            $request = $request->withQueryParameters($queryParameters);
-        }
 
         if ($this->acceptsJson()) {
             $request = $request->acceptJson();
