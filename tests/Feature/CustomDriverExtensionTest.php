@@ -39,10 +39,19 @@ test('throws an exception when an extended driver is invalid', function (): void
 
 test('falls back to ghasedak when default driver key is missing', function (): void {
     config()->set('sms_gateway', [
+        'defaults' => config('sms_gateway.defaults'),
         'drivers' => config('sms_gateway.drivers'),
     ]);
 
     expect(app('sms-gateway')->getDefaultDriver())->toBe('ghasedak');
+});
+
+test('defines shared HTTP client timeout defaults in config', function (): void {
+    expect(config('sms_gateway.defaults'))
+        ->toMatchArray([
+            'timeout'         => 10,
+            'connect_timeout' => 5,
+        ]);
 });
 
 test('dispatches an event after an SMS gateway request receives a response', function (): void {

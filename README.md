@@ -39,13 +39,20 @@ Set the default driver and provider credentials in `.env`:
 ```env
 SMS_GATEWAY_DRIVER=ghasedak
 
+SMS_GATEWAY_TIMEOUT=10
+SMS_GATEWAY_CONNECT_TIMEOUT=5
+
 SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key
 SMS_GATEWAY_GHASEDAK_LINENUMBER=3000xxxx
+SMS_GATEWAY_GHASEDAK_TIMEOUT=10
+SMS_GATEWAY_GHASEDAK_CONNECT_TIMEOUT=5
 
 SMS_GATEWAY_SUNWAY_GATEWAY=https://sms.sunwaysms.com/smsws/HttpService.ashx
 SMS_GATEWAY_SUNWAY_USERNAME=your-username
 SMS_GATEWAY_SUNWAY_PASSWORD=your-password
 SMS_GATEWAY_SUNWAY_SPECIALNUMBER=3000xxxx
+SMS_GATEWAY_SUNWAY_TIMEOUT=10
+SMS_GATEWAY_SUNWAY_CONNECT_TIMEOUT=5
 
 SMS_GATEWAY_KAVENEGAR_API_KEY=your-api-key
 SMS_GATEWAY_KAVENEGAR_GATEWAY=https://api.kavenegar.com/v1/
@@ -60,6 +67,8 @@ SMS_GATEWAY_SMSIR_CONNECT_TIMEOUT=5
 ```
 
 All drivers read from `config/sms_gateway.php` under the `sms_gateway.drivers` key. The configured driver name must match the name registered by the provider package.
+
+`SMS_GATEWAY_TIMEOUT` and `SMS_GATEWAY_CONNECT_TIMEOUT` define shared HTTP client defaults. Each provider can override those values with its own timeout variables.
 
 ## Usage
 

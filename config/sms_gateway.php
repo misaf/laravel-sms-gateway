@@ -19,6 +19,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default HTTP Client Options
+    |--------------------------------------------------------------------------
+    |
+    | These values are used by drivers when they do not define their own
+    | timeout or connection timeout values.
+    |
+    */
+
+    'defaults' => [
+        'timeout'         => (int) env('SMS_GATEWAY_TIMEOUT', 10),
+        'connect_timeout' => (int) env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | SMS Gateway Drivers
     |--------------------------------------------------------------------------
     |
@@ -32,8 +47,10 @@ return [
     'drivers' => [
 
         'ghasedak' => [
-            'apiKey'     => env('SMS_GATEWAY_GHASEDAK_APIKEY', ''),
-            'linenumber' => env('SMS_GATEWAY_GHASEDAK_LINENUMBER'),
+            'apiKey'          => env('SMS_GATEWAY_GHASEDAK_APIKEY', ''),
+            'linenumber'      => env('SMS_GATEWAY_GHASEDAK_LINENUMBER'),
+            'timeout'         => (int) env('SMS_GATEWAY_GHASEDAK_TIMEOUT', env('SMS_GATEWAY_TIMEOUT', 10)),
+            'connect_timeout' => (int) env('SMS_GATEWAY_GHASEDAK_CONNECT_TIMEOUT', env('SMS_GATEWAY_CONNECT_TIMEOUT', 5)),
         ],
 
         'sunway' => [
@@ -41,21 +58,23 @@ return [
             'username'       => env('SMS_GATEWAY_SUNWAY_USERNAME', ''),
             'password'       => env('SMS_GATEWAY_SUNWAY_PASSWORD', ''),
             'special_number' => env('SMS_GATEWAY_SUNWAY_SPECIALNUMBER'),
+            'timeout'        => (int) env('SMS_GATEWAY_SUNWAY_TIMEOUT', env('SMS_GATEWAY_TIMEOUT', 10)),
+            'connect_timeout' => (int) env('SMS_GATEWAY_SUNWAY_CONNECT_TIMEOUT', env('SMS_GATEWAY_CONNECT_TIMEOUT', 5)),
         ],
 
         'kavenegar' => [
             'apiKey'          => env('SMS_GATEWAY_KAVENEGAR_API_KEY', ''),
             'gateway'         => env('SMS_GATEWAY_KAVENEGAR_GATEWAY', 'https://api.kavenegar.com/v1/'),
-            'timeout'         => (int) env('SMS_GATEWAY_KAVENEGAR_TIMEOUT', 10),
-            'connect_timeout' => (int) env('SMS_GATEWAY_KAVENEGAR_CONNECT_TIMEOUT', 5),
+            'timeout'         => (int) env('SMS_GATEWAY_KAVENEGAR_TIMEOUT', env('SMS_GATEWAY_TIMEOUT', 10)),
+            'connect_timeout' => (int) env('SMS_GATEWAY_KAVENEGAR_CONNECT_TIMEOUT', env('SMS_GATEWAY_CONNECT_TIMEOUT', 5)),
         ],
 
         'smsir' => [
             'apiKey'          => env('SMS_GATEWAY_SMSIR_API_KEY', ''),
             'apiKeyHeader'    => env('SMS_GATEWAY_SMSIR_API_KEY_HEADER', 'X-API-KEY'),
             'gateway'         => env('SMS_GATEWAY_SMSIR_GATEWAY', 'https://api.sms.ir/v1/'),
-            'timeout'         => (int) env('SMS_GATEWAY_SMSIR_TIMEOUT', 10),
-            'connect_timeout' => (int) env('SMS_GATEWAY_SMSIR_CONNECT_TIMEOUT', 5),
+            'timeout'         => (int) env('SMS_GATEWAY_SMSIR_TIMEOUT', env('SMS_GATEWAY_TIMEOUT', 10)),
+            'connect_timeout' => (int) env('SMS_GATEWAY_SMSIR_CONNECT_TIMEOUT', env('SMS_GATEWAY_CONNECT_TIMEOUT', 5)),
         ],
 
     ],

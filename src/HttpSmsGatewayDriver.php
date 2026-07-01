@@ -73,12 +73,18 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
 
     private function timeout(): int
     {
-        return Config::integer($this->configPath('timeout'), 10);
+        return Config::integer(
+            $this->configPath('timeout'),
+            fn(): int => Config::integer('sms_gateway.defaults.timeout'),
+        );
     }
 
     private function connectTimeout(): int
     {
-        return Config::integer($this->configPath('connect_timeout'), 5);
+        return Config::integer(
+            $this->configPath('connect_timeout'),
+            fn(): int => Config::integer('sms_gateway.defaults.connect_timeout'),
+        );
     }
 
     private function configPath(string $key): string
