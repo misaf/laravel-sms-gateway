@@ -16,19 +16,24 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
 {
     final public function send(): PendingRequest
     {
+        $sentRequest = null;
+
         $request = Http::baseUrl($this->gateway())
-            ->timeout($this->timeout())
-            ->connectTimeout($this->connectTimeout());
+            ->timeout(Config::integer('sms_gateway.defaults.timeout'))
+            ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'))
+            ->beforeSending(function (Request $request) use (&$sentRequest): void {
+                $sentRequest = $request;
+            });
 
         $headers = $this->headers();
 
-        if ([] !== $headers) {
+        if ($headers !== []) {
             $request = $request->withHeaders($headers);
         }
 
         $queryParameters = $this->queryParameters();
 
-        if ([] !== $queryParameters) {
+        if ($queryParameters !== []) {
             $request = $request->withQueryParameters($queryParameters);
         }
 
@@ -36,8 +41,10 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
             $request = $request->acceptJson();
         }
 
-        return $request->afterResponse(function (Response $response, Request $request): void {
-            SmsSent::dispatch($this->driverName(), $request, $response);
+        return $request->afterResponse(function (Response $response) use (&$sentRequest): void {
+            if ($sentRequest instanceof Request) {
+                SmsSent::dispatch($this->driverName(), $sentRequest, $response);
+            }
         });
     }
 
@@ -50,7 +57,15 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
      */
     protected function headers(): array
     {
-        return [];
+        $apiKeyHeader = $this->apiKeyHeader();
+
+        if ($apiKeyHeader === null) {
+            return [];
+        }
+
+        return [
+            $apiKeyHeader => $this->serviceConfigString('api_key', 'apiKey'),
+        ];
     }
 
     /**
@@ -66,29 +81,34 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
         return false;
     }
 
+    protected function apiKeyHeader(): ?string
+    {
+        return null;
+    }
+
+    protected function serviceConfigString(string $serviceKey, string $legacyDriverKey, string $default = ''): string
+    {
+        $serviceValue = Config::get($this->serviceConfigPath($serviceKey));
+
+        if (is_string($serviceValue) && $serviceValue !== '') {
+            return $serviceValue;
+        }
+
+        return Config::string($this->configPath($legacyDriverKey), $default);
+    }
+
     private function gateway(): string
     {
         return Config::string($this->configPath('gateway'), $this->defaultGateway());
     }
 
-    private function timeout(): int
-    {
-        return Config::integer(
-            $this->configPath('timeout'),
-            fn(): int => Config::integer('sms_gateway.defaults.timeout'),
-        );
-    }
-
-    private function connectTimeout(): int
-    {
-        return Config::integer(
-            $this->configPath('connect_timeout'),
-            fn(): int => Config::integer('sms_gateway.defaults.connect_timeout'),
-        );
-    }
-
     private function configPath(string $key): string
     {
         return "sms_gateway.drivers.{$this->driverName()}.{$key}";
+    }
+
+    private function serviceConfigPath(string $key): string
+    {
+        return "services.{$this->driverName()}.{$key}";
     }
 }
