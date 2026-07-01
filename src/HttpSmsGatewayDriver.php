@@ -66,29 +66,19 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
         return false;
     }
 
-    protected function configString(string $key, string $default = ''): string
-    {
-        return Config::string($this->configPath($key), $default);
-    }
-
-    protected function configInteger(string $key, int $default): int
-    {
-        return Config::integer($this->configPath($key), $default);
-    }
-
     private function gateway(): string
     {
-        return $this->configString('gateway', $this->defaultGateway());
+        return Config::string($this->configPath('gateway'), $this->defaultGateway());
     }
 
     private function timeout(): int
     {
-        return $this->configInteger('timeout', 10);
+        return Config::integer($this->configPath('timeout'), 10);
     }
 
     private function connectTimeout(): int
     {
-        return $this->configInteger('connect_timeout', 5);
+        return Config::integer($this->configPath('connect_timeout'), 5);
     }
 
     private function configPath(string $key): string
