@@ -1,22 +1,11 @@
 # Laravel SMS Gateway
 
-A driver-based SMS gateway package for Laravel built on `Illuminate\Support\Manager`.
-
-## What This Package Provides
-
-The core package provides:
-
-- `SmsGatewayManager` for driver resolution
-- `SmsGatewayHandlerInterface` as the driver contract
-- `SmsGateway` facade for simple access
-- shared configuration (`config/sms_gateway.php`)
-
-The core package does not ship built-in providers directly. Drivers are registered by plugin packages through `SmsGateway::extend()` / manager extension.
+A driver-based SMS gateway manager for Laravel. The core package provides the manager, facade, driver contract, shared HTTP driver base, configuration file, and `SmsSent` event. Provider packages register concrete drivers such as Ghasedak, Sunway, Kavenegar, and Sms.ir.
 
 ## Requirements
 
 - PHP 8.2+
-- Laravel 10, 11, or 12
+- Laravel 10, 11, 12, or 13
 
 ## Installation
 
@@ -26,27 +15,26 @@ Install the core package:
 composer require misaf/laravel-sms-gateway
 ```
 
-Install any driver plugins you need:
+Install the provider packages you need:
 
 ```bash
-composer require \
-  misaf/laravel-sms-gateway-ghasedak \
-  misaf/laravel-sms-gateway-sunway \
-  misaf/laravel-sms-gateway-kavenegar \
-  misaf/laravel-sms-gateway-smsir
+composer require misaf/laravel-sms-gateway-ghasedak
+composer require misaf/laravel-sms-gateway-sunway
+composer require misaf/laravel-sms-gateway-kavenegar
+composer require misaf/laravel-sms-gateway-smsir
 ```
+
+Laravel package discovery registers the package service providers automatically.
 
 ## Configuration
 
-Publish configuration:
+Publish the shared configuration file:
 
 ```bash
 php artisan vendor:publish --tag=sms-gateway-config
 ```
 
-All drivers use the same config file: `config/sms_gateway.php`.
-
-### Example `.env`
+Set the default driver and provider credentials in `.env`:
 
 ```env
 SMS_GATEWAY_DRIVER=ghasedak
@@ -71,74 +59,89 @@ SMS_GATEWAY_SMSIR_TIMEOUT=10
 SMS_GATEWAY_SMSIR_CONNECT_TIMEOUT=5
 ```
 
+All drivers read from `config/sms_gateway.php` under the `sms_gateway.drivers` key. The configured driver name must match the name registered by the provider package.
+
 ## Usage
 
-### Facade
+The facade resolves the default driver from `sms_gateway.default`:
 
 ```php
 use Misaf\LaravelSmsGateway\Facade\SmsGateway;
 
 SmsGateway::driver()->send()->post('sms/send/simple', [
-    'message' => 'Hello',
+    'message'  => 'Hello',
     'receptor' => '09123456789',
 ]);
+```
 
+You may also choose a driver explicitly:
+
+```php
 SmsGateway::driver('sunway')->send()->get('', [
-    'method' => 'SendSMS',
-    'mobile' => '09123456789',
+    'method'  => 'SendSMS',
+    'mobile'  => '09123456789',
     'message' => 'Hello',
 ]);
 ```
 
-### Dependency Injection
+The `send()` method returns Laravel's `Illuminate\Http\Client\PendingRequest`, so you can use the normal HTTP client methods for requests, retries, headers, query parameters, and response handling.
+
+## Available Drivers
+
+| Driver | Package |
+| --- | --- |
+| `ghasedak` | `misaf/laravel-sms-gateway-ghasedak` |
+| `sunway` | `misaf/laravel-sms-gateway-sunway` |
+| `kavenegar` | `misaf/laravel-sms-gateway-kavenegar` |
+| `smsir` | `misaf/laravel-sms-gateway-smsir` |
+
+## Events
+
+Drivers that extend `Misaf\LaravelSmsGateway\HttpSmsGatewayDriver` dispatch `Misaf\LaravelSmsGateway\Events\SmsSent` after the HTTP client receives a response.
+
+```php
+use Misaf\LaravelSmsGateway\Events\SmsSent;
+
+final class StoreSmsGatewayResult
+{
+    public function handle(SmsSent $event): void
+    {
+        $driver = $event->driverName;
+        $url = $event->request->url();
+        $status = $event->response->status();
+        $body = $event->response->json();
+    }
+}
+```
+
+The event exposes:
+
+- `$driverName`: the resolved SMS gateway driver name.
+- `$request`: the `Illuminate\Http\Client\Request` instance.
+- `$response`: the `Illuminate\Http\Client\Response` instance.
+
+## Dependency Injection
 
 ```php
 use Misaf\LaravelSmsGateway\SmsGatewayManager;
 
-final class SmsController
+final class SendWelcomeSms
 {
-    public function __construct(private SmsGatewayManager $gateway)
-    {
-    }
+    public function __construct(private SmsGatewayManager $gateway) {}
 
-    public function send(): void
+    public function handle(string $mobile): void
     {
         $this->gateway->driver('ghasedak')->send()->post('sms/send/simple', [
-            'message' => 'Hello',
-            'receptor' => '09123456789',
+            'message'  => 'Welcome',
+            'receptor' => $mobile,
         ]);
     }
 }
 ```
 
-### Service Container
+## Custom Drivers
 
-```php
-$gateway = app('sms-gateway');
-
-$gateway->driver('kavenegar')->send();
-```
-
-## Driver Resolution (Manager Behavior)
-
-- `driver()` resolves the default driver from `sms_gateway.default`.
-- `driver('name')` resolves the given driver name.
-- Driver names come from the key used when registering `extend('name', ...)`.
-- If a driver cannot be resolved, Laravel Manager throws a driver resolution exception.
-- If a resolved driver does not implement `SmsGatewayHandlerInterface`, the manager throws `InvalidArgumentException`.
-
-## Built-In Plugin Drivers
-
-- `ghasedak` via `misaf/laravel-sms-gateway-ghasedak`
-- `sunway` via `misaf/laravel-sms-gateway-sunway`
-- `kavenegar` via `misaf/laravel-sms-gateway-kavenegar`
-- `smsir` via `misaf/laravel-sms-gateway-smsir`
-
-## App-Level Custom Driver
-
-Use this when custom logic belongs to your application, not a reusable package.
-
-### 1. Create a driver class
+Application-specific drivers may implement `SmsGatewayHandlerInterface` directly:
 
 ```php
 namespace App\SmsGateways;
@@ -160,11 +163,9 @@ final class CustomDriver implements SmsGatewayHandlerInterface
 }
 ```
 
-### 2. Register the driver
+Register the driver from a service provider:
 
 ```php
-namespace App\Providers;
-
 use App\SmsGateways\CustomDriver;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
@@ -182,51 +183,7 @@ final class AppServiceProvider extends ServiceProvider
 }
 ```
 
-### 3. Add config
-
-```php
-// config/sms_gateway.php
-'drivers' => [
-    // ...
-    'custom' => [
-        'api_key' => env('SMS_GATEWAY_CUSTOM_API_KEY'),
-        'gateway' => env('SMS_GATEWAY_CUSTOM_GATEWAY', 'https://api.example.com'),
-        'timeout' => (int) env('SMS_GATEWAY_CUSTOM_TIMEOUT', 10),
-        'connect_timeout' => (int) env('SMS_GATEWAY_CUSTOM_CONNECT_TIMEOUT', 5),
-    ],
-],
-```
-
-Then use:
-
-```php
-SmsGateway::driver('custom')->send();
-```
-
-## Creating a Separate Driver Package
-
-Use this when the driver should be reusable across projects.
-
-1. Create a new package (for example `misaf/laravel-sms-gateway-yourdriver`).
-2. Require `misaf/laravel-sms-gateway` and `spatie/laravel-package-tools`.
-3. Implement a driver class that implements `SmsGatewayHandlerInterface`.
-4. In your package service provider, register with manager extension.
-
-Example registration pattern:
-
-```php
-use Illuminate\Contracts\Foundation\Application;
-use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
-use Misaf\LaravelSmsGateway\SmsGatewayManager;
-
-$this->app->afterResolving('sms-gateway', function (SmsGatewayManager $manager): void {
-    $manager->extend('yourdriver', function (Application $app): SmsGatewayHandlerInterface {
-        return $app->make(YourDriver::class);
-    });
-});
-```
-
-No separate config file is required for each driver package. Use the main `sms_gateway.drivers` config and choose a unique key that matches your `extend('key', ...)` name.
+If your custom driver should use the shared timeout/base URL behavior and dispatch `SmsSent`, extend `HttpSmsGatewayDriver` instead of implementing the interface directly.
 
 ## Testing and Formatting
 
