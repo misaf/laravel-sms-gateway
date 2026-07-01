@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Misaf\LaravelSmsGateway;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
 abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
@@ -33,7 +36,9 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
             $request = $request->acceptJson();
         }
 
-        return $request;
+        return $request->afterResponse(function (Response $response, Request $request): void {
+            SmsSent::dispatch($this->driverName(), $request, $response);
+        });
     }
 
     abstract protected function driverName(): string;
