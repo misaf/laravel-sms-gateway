@@ -54,11 +54,11 @@ return [
         ],
 
         'sunway' => [
-            'gateway'        => env('SMS_GATEWAY_SUNWAY_GATEWAY', 'https://sms.sunwaysms.com/smsws/HttpService.ashx'),
-            'username'       => env('SMS_GATEWAY_SUNWAY_USERNAME', ''),
-            'password'       => env('SMS_GATEWAY_SUNWAY_PASSWORD', ''),
-            'special_number' => env('SMS_GATEWAY_SUNWAY_SPECIALNUMBER'),
-            'timeout'        => (int) env('SMS_GATEWAY_SUNWAY_TIMEOUT', env('SMS_GATEWAY_TIMEOUT', 10)),
+            'gateway'         => env('SMS_GATEWAY_SUNWAY_GATEWAY', 'https://sms.sunwaysms.com/smsws/HttpService.ashx'),
+            'username'        => env('SMS_GATEWAY_SUNWAY_USERNAME', ''),
+            'password'        => env('SMS_GATEWAY_SUNWAY_PASSWORD', ''),
+            'special_number'  => env('SMS_GATEWAY_SUNWAY_SPECIALNUMBER'),
+            'timeout'         => (int) env('SMS_GATEWAY_SUNWAY_TIMEOUT', env('SMS_GATEWAY_TIMEOUT', 10)),
             'connect_timeout' => (int) env('SMS_GATEWAY_SUNWAY_CONNECT_TIMEOUT', env('SMS_GATEWAY_CONNECT_TIMEOUT', 5)),
         ],
 

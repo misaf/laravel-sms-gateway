@@ -35,12 +35,12 @@ test('throws an exception when an extended driver is invalid', function (): void
 
     expect(fn(): mixed => SmsGateway::driver('invalid'))
         ->toThrow(InvalidArgumentException::class, 'must implement');
-})->skip();
+});
 
 test('falls back to ghasedak when default driver key is missing', function (): void {
     config()->set('sms_gateway', [
         'defaults' => config('sms_gateway.defaults'),
-        'drivers' => config('sms_gateway.drivers'),
+        'drivers'  => config('sms_gateway.drivers'),
     ]);
 
     expect(app('sms-gateway')->getDefaultDriver())->toBe('ghasedak');
@@ -63,8 +63,7 @@ test('dispatches an event after an SMS gateway request receives a response', fun
         'https://events.example.com/messages' => Http::response(['message_id' => 'sms-123'], 202),
     ]);
 
-    SmsGateway::extend('eventful', fn(): SmsGatewayHandlerInterface => new class extends HttpSmsGatewayDriver
-    {
+    SmsGateway::extend('eventful', fn(): SmsGatewayHandlerInterface => new class () extends HttpSmsGatewayDriver {
         protected function driverName(): string
         {
             return 'eventful';
