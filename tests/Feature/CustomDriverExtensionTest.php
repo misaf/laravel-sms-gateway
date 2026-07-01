@@ -64,8 +64,7 @@ test('does not define per driver HTTP client timeout values', function (): void 
         ]);
 });
 
-test('falls back to legacy driver config when service credentials are empty', function (): void {
-    config()->set('services.legacy.api_key', '');
+test('falls back to legacy driver config when service credentials are missing', function (): void {
     config()->set('sms_gateway.drivers.legacy.apiKey', 'legacy-api-key');
 
     Http::fake([

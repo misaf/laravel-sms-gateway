@@ -88,13 +88,10 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
 
     protected function serviceConfigString(string $serviceKey, string $legacyDriverKey, string $default = ''): string
     {
-        $serviceValue = Config::get($this->serviceConfigPath($serviceKey));
-
-        if (is_string($serviceValue) && $serviceValue !== '') {
-            return $serviceValue;
-        }
-
-        return Config::string($this->configPath($legacyDriverKey), $default);
+        return Config::string(
+            $this->serviceConfigPath($serviceKey),
+            Config::string($this->configPath($legacyDriverKey), $default),
+        );
     }
 
     private function gateway(): string
