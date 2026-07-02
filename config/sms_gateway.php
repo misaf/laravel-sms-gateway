@@ -8,16 +8,12 @@ return [
     | Default SMS Gateway Driver
     |--------------------------------------------------------------------------
     |
-    | This option sets the default SMS gateway driver for requests.
-    | You may specify any of the other available drivers provided here.
-    |
-    | Supported: "ghasedak", "sunway", "kavenegar", "smsir", "twilio",
-    | "vonage", "plivo", "messagebird", "textlocal", "melipayamak",
-    | "ippanel", "magfa"
+    | This option sets the default SMS gateway driver for requests. Install
+    | the matching driver package or register a custom driver with extend().
     |
     */
 
-    'default' => env('SMS_GATEWAY_DRIVER', 'ghasedak'),
+    'default' => env('SMS_GATEWAY_DRIVER', ''),
 
     /*
     |--------------------------------------------------------------------------
@@ -40,13 +36,7 @@ return [
     |
     | Per-driver credentials and gateways are configured in config/services.php,
     | following Laravel's convention for third-party service credentials. Values
-    | set there take precedence; anything defined here acts as a shared default,
-    | and each driver falls back to its own built-in default gateway when
-    | neither is set.
-    |
-    | Supported drivers: "ghasedak", "sunway", "kavenegar", "smsir",
-    | "twilio", "vonage", "plivo", "messagebird", "textlocal",
-    | "melipayamak", "ippanel", "magfa"
+    | set there take precedence; anything defined here acts as a shared default.
     |
     */
 

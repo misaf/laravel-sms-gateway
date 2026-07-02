@@ -2,13 +2,16 @@
 
 A driver-based SMS gateway manager for Laravel 13.
 
-The package provides:
+The core package provides the Laravel-facing SMS gateway manager, facade, driver contract, reusable HTTP driver base class, and send event. Provider-specific integrations are installed as separate Composer packages, so applications only pull in the gateways they actually use.
 
-- A `SmsGateway` facade and injectable `SmsGatewayManager`.
-- Built-in HTTP drivers.
-- A common `PendingRequest` API through Laravel's HTTP client.
-- A `SmsSent` event for HTTP-based drivers.
-- A small driver contract for custom gateways.
+## Features
+
+- `SmsGateway` facade and injectable `SmsGatewayManager`.
+- Driver registration through Laravel's manager `extend()` API.
+- Shared `PendingRequest` API through Laravel's HTTP client.
+- Reusable `SmsGatewayDriver` base class for HTTP-based gateways.
+- `SmsSent` event for drivers that extend the base HTTP driver.
+- Small `SmsGatewayHandlerInterface` contract for custom drivers.
 
 ## Requirements
 
@@ -17,17 +20,45 @@ The package provides:
 
 ## Installation
 
+Install the core package:
+
 ```bash
 composer require misaf/laravel-sms-gateway
 ```
 
-Laravel package discovery registers `Misaf\LaravelSmsGateway\SmsGatewayServiceProvider` automatically.
+Install one or more driver packages:
 
-Publish the package configuration when you need to override the defaults:
+```bash
+composer require misaf/laravel-sms-gateway-ghasedak
+composer require misaf/laravel-sms-gateway-kavenegar
+```
+
+Laravel package discovery registers the core service provider and installed driver service providers automatically.
+
+Publish the core configuration when you need to override defaults:
 
 ```bash
 php artisan vendor:publish --tag=sms-gateway-config
 ```
+
+## Driver Packages
+
+Available first-party driver packages:
+
+| Driver | Package |
+| --- | --- |
+| `ghasedak` | `misaf/laravel-sms-gateway-ghasedak` |
+| `sunway` | `misaf/laravel-sms-gateway-sunway` |
+| `kavenegar` | `misaf/laravel-sms-gateway-kavenegar` |
+| `smsir` | `misaf/laravel-sms-gateway-smsir` |
+| `twilio` | `misaf/laravel-sms-gateway-twilio` |
+| `vonage` | `misaf/laravel-sms-gateway-vonage` |
+| `plivo` | `misaf/laravel-sms-gateway-plivo` |
+| `messagebird` | `misaf/laravel-sms-gateway-messagebird` |
+| `textlocal` | `misaf/laravel-sms-gateway-textlocal` |
+| `melipayamak` | `misaf/laravel-sms-gateway-melipayamak` |
+| `ippanel` | `misaf/laravel-sms-gateway-ippanel` |
+| `magfa` | `misaf/laravel-sms-gateway-magfa` |
 
 ## Quick Start
 
@@ -45,16 +76,15 @@ Add the matching service credentials in `config/services.php`:
 ```php
 'ghasedak' => [
     'api_key' => env('SMS_GATEWAY_GHASEDAK_APIKEY'),
-    'line_number' => env('SMS_GATEWAY_GHASEDAK_LINENUMBER'),
 ],
 ```
 
-Send a request through the default driver:
+Send through the default driver:
 
 ```php
 use Misaf\LaravelSmsGateway\Facade\SmsGateway;
 
-$response = SmsGateway::driver()->send()->post('sms/send/simple', [
+$response = SmsGateway::driver()->send([
     'message'  => 'Hello',
     'receptor' => '09123456789',
 ]);
@@ -63,18 +93,29 @@ $response = SmsGateway::driver()->send()->post('sms/send/simple', [
 Select a driver explicitly when needed:
 
 ```php
-SmsGateway::driver('sunway')->send()->get('', [
-    'method'  => 'SendSMS',
-    'mobile'  => '09123456789',
-    'message' => 'Hello',
+$response = SmsGateway::driver('kavenegar')->send([
+    'receptor' => '09123456789',
+    'message'  => 'Hello',
 ]);
 ```
 
-`send()` returns an `Illuminate\Http\Client\PendingRequest`, so you can continue with Laravel HTTP client methods such as `get`, `post`, `retry`, `timeout`, and `withHeaders`.
+Use the underlying Laravel HTTP client request when you need lower-level control:
+
+```php
+$response = SmsGateway::driver('kavenegar')
+    ->request()
+    ->retry(3, 200)
+    ->post('sms/send.json', [
+        'receptor' => '09123456789',
+        'message'  => 'Hello',
+    ]);
+```
+
+`request()` returns an `Illuminate\Http\Client\PendingRequest`, so you can continue with Laravel HTTP client methods such as `get`, `post`, `retry`, `timeout`, `withHeaders`, and `withOptions`.
 
 ## Configuration
 
-The package reads `sms_gateway.default` to choose the default driver. The published config file uses `SMS_GATEWAY_DRIVER` and defaults to `ghasedak`.
+The package reads `sms_gateway.default` to choose the default driver. The published config file uses `SMS_GATEWAY_DRIVER` and defaults to an empty string until you install and configure a driver.
 
 HTTP drivers use these shared timeout values:
 
@@ -83,73 +124,42 @@ SMS_GATEWAY_TIMEOUT=10
 SMS_GATEWAY_CONNECT_TIMEOUT=5
 ```
 
-Per-driver values resolve in this order:
+Drivers extending `SmsGatewayDriver` resolve per-driver values in this order:
 
 1. `services.{driver}.{key}` from `config/services.php`.
 2. `sms_gateway.drivers.{driver}.{camelCaseKey}` from `config/sms_gateway.php`.
 3. The driver's built-in default, when one exists.
 
-Set `services.{driver}.gateway` to override a provider's default gateway URL.
-
-## Service Credentials
-
-Add only the providers you use to `config/services.php`.
-
-| Driver | Required service keys | Environment variables |
-| --- | --- | --- |
-| `ghasedak` | `api_key`, optional `line_number` | `SMS_GATEWAY_GHASEDAK_APIKEY`, `SMS_GATEWAY_GHASEDAK_LINENUMBER` |
-| `sunway` | `username`, `password`, optional `special_number` | `SMS_GATEWAY_SUNWAY_USERNAME`, `SMS_GATEWAY_SUNWAY_PASSWORD`, `SMS_GATEWAY_SUNWAY_SPECIALNUMBER` |
-| `kavenegar` | `api_key` | `SMS_GATEWAY_KAVENEGAR_API_KEY` |
-| `smsir` | `api_key`, optional `api_key_header` | `SMS_GATEWAY_SMSIR_API_KEY`, `SMS_GATEWAY_SMSIR_API_KEY_HEADER` |
-| `twilio` | `account_sid`, `auth_token` | `SMS_GATEWAY_TWILIO_ACCOUNT_SID`, `SMS_GATEWAY_TWILIO_AUTH_TOKEN` |
-| `vonage` | `api_key`, `api_secret` | `SMS_GATEWAY_VONAGE_API_KEY`, `SMS_GATEWAY_VONAGE_API_SECRET` |
-| `plivo` | `auth_id`, `auth_token` | `SMS_GATEWAY_PLIVO_AUTH_ID`, `SMS_GATEWAY_PLIVO_AUTH_TOKEN` |
-| `messagebird` | `access_key` | `SMS_GATEWAY_MESSAGEBIRD_ACCESS_KEY` |
-| `textlocal` | `api_key` | `SMS_GATEWAY_TEXTLOCAL_API_KEY` |
-| `melipayamak` | `username`, `password` | `SMS_GATEWAY_MELIPAYAMAK_USERNAME`, `SMS_GATEWAY_MELIPAYAMAK_PASSWORD` |
-| `ippanel` | `username`, `password` | `SMS_GATEWAY_IPPANEL_USERNAME`, `SMS_GATEWAY_IPPANEL_PASSWORD` |
-| `magfa` | `username`, `password` | `SMS_GATEWAY_MAGFA_USERNAME`, `SMS_GATEWAY_MAGFA_PASSWORD` |
-
-Example `config/services.php` entries:
+For example:
 
 ```php
-'twilio' => [
-    'account_sid' => env('SMS_GATEWAY_TWILIO_ACCOUNT_SID'),
-    'auth_token' => env('SMS_GATEWAY_TWILIO_AUTH_TOKEN'),
-],
-
-'smsir' => [
-    'api_key' => env('SMS_GATEWAY_SMSIR_API_KEY'),
-    'api_key_header' => env('SMS_GATEWAY_SMSIR_API_KEY_HEADER', 'X-API-KEY'),
+// config/services.php
+'ghasedak' => [
+    'api_key' => env('SMS_GATEWAY_GHASEDAK_APIKEY'),
+    'gateway' => env('SMS_GATEWAY_GHASEDAK_GATEWAY'),
+    'endpoints' => [
+        'default' => env('SMS_GATEWAY_GHASEDAK_ENDPOINT', 'sms/send/simple'),
+    ],
 ],
 ```
 
-## Built-In Drivers
+Set `services.{driver}.gateway` to override a provider's default gateway URL. Set `services.{driver}.endpoints.{name}` to override a built-in endpoint path.
 
-| Driver | Default gateway | Request behavior |
-| --- | --- | --- |
-| `ghasedak` | `https://api.ghasedak.me/v2/` | Sends `api_key` in the `apikey` header. |
-| `sunway` | `https://sms.sunwaysms.com/smsws/HttpService.ashx` | Adds `UserName` and `Password` query parameters. |
-| `kavenegar` | `https://api.kavenegar.com/v1/` | Sends `api_key` in the `apikey` header. |
-| `smsir` | `https://api.sms.ir/v1/` | Sends `api_key` in `X-API-KEY` by default and accepts JSON. |
-| `twilio` | `https://api.twilio.com/2010-04-01/Accounts/{account_sid}/` | Uses HTTP basic auth and form requests. |
-| `vonage` | `https://rest.nexmo.com/` | Adds `api_key` and `api_secret` query parameters and accepts JSON. |
-| `plivo` | `https://api.plivo.com/v1/Account/{auth_id}/` | Uses HTTP basic auth and JSON requests. |
-| `messagebird` | `https://rest.messagebird.com/` | Sends `Authorization: AccessKey {access_key}` and JSON requests. |
-| `textlocal` | `https://api.txtlocal.com/` | Adds `apikey` as a query parameter and sends form requests. |
-| `melipayamak` | `https://rest.payamak-panel.com/api/` | Adds `username` and `password` query parameters and sends form requests. |
-| `ippanel` | `https://ippanel.com/services.jspd` | Adds `uname` and `pass` query parameters and sends form requests. |
-| `magfa` | `https://sms.magfa.com/api/http/sms/v2/` | Uses HTTP basic auth and JSON requests. |
-
-Twilio scopes its base URL to the configured account, so request paths are relative to that account:
+Legacy package-level driver configuration can be kept in `config/sms_gateway.php`:
 
 ```php
-SmsGateway::driver('twilio')->send()->post('Messages.json', [
-    'To'   => '+15005550006',
-    'From' => '+15005550001',
-    'Body' => 'Hello',
-]);
+'drivers' => [
+    'ghasedak' => [
+        'apiKey' => env('SMS_GATEWAY_GHASEDAK_APIKEY'),
+        'gateway' => env('SMS_GATEWAY_GHASEDAK_GATEWAY'),
+        'endpoints' => [
+            'default' => 'sms/send/simple',
+        ],
+    ],
+],
 ```
+
+Service configuration still takes precedence over values in `sms_gateway.drivers`.
 
 ## Dependency Injection
 
@@ -166,7 +176,7 @@ final class SendWelcomeSms
 
     public function handle(string $mobile): void
     {
-        $this->gateway->driver('ghasedak')->send()->post('sms/send/simple', [
+        $this->gateway->driver()->send([
             'message'  => 'Welcome',
             'receptor' => $mobile,
         ]);
@@ -176,7 +186,7 @@ final class SendWelcomeSms
 
 ## Events
 
-Drivers extending `Misaf\LaravelSmsGateway\HttpSmsGatewayDriver` dispatch `Misaf\LaravelSmsGateway\Events\SmsSent` after the HTTP client receives a response.
+Drivers extending `Misaf\LaravelSmsGateway\SmsGatewayDriver` dispatch `Misaf\LaravelSmsGateway\Events\SmsSent` after the HTTP client receives a response.
 
 ```php
 use Misaf\LaravelSmsGateway\Events\SmsSent;
@@ -201,19 +211,28 @@ The event exposes:
 
 ## Custom Drivers
 
-Custom drivers must return a `PendingRequest` from `send()`.
+Custom drivers must implement `send()` and `request()`.
 
 ```php
 namespace App\SmsGateways;
 
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
 final class CustomDriver implements SmsGatewayHandlerInterface
 {
-    public function send(): PendingRequest
+    /**
+     * @param array<string, mixed> $data
+     */
+    public function send(array $data, ?string $endpoint = null): Response
+    {
+        return $this->request()->post($endpoint ?? 'messages', $data);
+    }
+
+    public function request(): PendingRequest
     {
         return Http::withToken(Config::string('services.custom.token'))
             ->baseUrl(Config::string('services.custom.gateway', 'https://api.example.com'))
@@ -243,14 +262,14 @@ final class AppServiceProvider extends ServiceProvider
 }
 ```
 
-Extend `HttpSmsGatewayDriver` when the custom driver should reuse gateway resolution, shared timeouts, API-key headers, and `SmsSent` dispatching:
+Extend `SmsGatewayDriver` when the custom driver should reuse gateway resolution, shared timeouts, API-key headers, endpoint resolution, and `SmsSent` dispatching:
 
 ```php
 namespace App\SmsGateways;
 
-use Misaf\LaravelSmsGateway\HttpSmsGatewayDriver;
+use Misaf\LaravelSmsGateway\SmsGatewayDriver;
 
-final class CustomHttpDriver extends HttpSmsGatewayDriver
+final class CustomSmsGatewayDriver extends SmsGatewayDriver
 {
     protected function driverName(): string
     {
@@ -266,12 +285,63 @@ final class CustomHttpDriver extends HttpSmsGatewayDriver
     {
         return 'X-API-Key';
     }
+
+    /**
+     * @return array<string, string>
+     */
+    protected function defaultEndpoints(): array
+    {
+        return [
+            'default' => 'messages',
+            'lookup' => 'messages/lookup',
+        ];
+    }
 }
 ```
 
-For drivers extending `HttpSmsGatewayDriver`, values such as `services.custom.api_key`, `services.custom.gateway`, and `sms_gateway.drivers.custom.apiKey` are resolved automatically by the base class.
+For drivers extending `SmsGatewayDriver`, values such as `services.custom.api_key`, `services.custom.gateway`, `services.custom.endpoints.default`, and `sms_gateway.drivers.custom.apiKey` are resolved automatically by the base class. If `apiKeyHeader()` returns a header name, the base class sends that header only when the resolved `api_key` value is not empty.
 
-## Testing and Formatting
+You can send through a named endpoint by passing the resolved endpoint to `send()`:
+
+```php
+/** @var \App\SmsGateways\CustomSmsGatewayDriver $driver */
+$driver = SmsGateway::driver('custom');
+
+$response = $driver->send(
+    ['mobile' => '09123456789', 'code' => '123456'],
+    $driver->endpoint('lookup'),
+);
+```
+
+## Creating Driver Packages
+
+A driver package should require this core package, provide a concrete driver class, and register itself with the manager from its package service provider:
+
+```php
+use Illuminate\Contracts\Foundation\Application;
+use Misaf\LaravelSmsGateway\SmsGatewayManager;
+use Vendor\SmsGatewayExample\Drivers\ExampleDriver;
+
+$this->app->afterResolving(SmsGatewayManager::class, function (SmsGatewayManager $manager, Application $app): void {
+    $manager->extend('example', fn (): ExampleDriver => $app->make(ExampleDriver::class));
+});
+```
+
+Add the driver package service provider to that package's `composer.json`:
+
+```json
+{
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Vendor\\SmsGatewayExample\\SmsGatewayExampleServiceProvider"
+            ]
+        }
+    }
+}
+```
+
+## Testing and Analysis
 
 Run these commands from the package root:
 
@@ -279,8 +349,6 @@ Run these commands from the package root:
 composer test
 composer analyse
 ```
-
-Code style is checked and fixed by the `Fix Code Style` GitHub Actions workflow using Laravel Pint on PHP 8.3.
 
 ## License
 

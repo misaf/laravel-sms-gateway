@@ -13,9 +13,19 @@ use Illuminate\Support\Str;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
-abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
+abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
 {
-    final public function send(): PendingRequest
+    /**
+     * @param array<string, mixed> $data
+     */
+    final public function send(array $data, ?string $endpoint = null): Response
+    {
+        $endpoint ??= $this->endpoint();
+
+        return $this->request()->post('' === $endpoint ? $this->gateway() : $endpoint, $data);
+    }
+
+    final public function request(): PendingRequest
     {
         $request = Http::baseUrl($this->gateway())
             ->timeout(Config::integer('sms_gateway.defaults.timeout'))
@@ -29,6 +39,15 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
         });
     }
 
+    final public function endpoint(string $name = 'default'): string
+    {
+        $servicePath = "services.{$this->driverName()}.endpoints.{$name}";
+        $driverPath = "sms_gateway.drivers.{$this->driverName()}.endpoints.{$name}";
+        $default = $this->defaultEndpoints()[$name] ?? ('default' === $name ? '' : $name);
+
+        return Config::string($servicePath, fn(): string => Config::string($driverPath, $default));
+    }
+
     abstract protected function driverName(): string;
 
     abstract protected function defaultGateway(): string;
@@ -36,16 +55,25 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
     /**
      * @return array<string, string>
      */
+    protected function defaultEndpoints(): array
+    {
+        return [];
+    }
+
+    /**
+     * @return array<string, string>
+     */
     protected function headers(): array
     {
         $apiKeyHeader = $this->apiKeyHeader();
+        $apiKey = $this->serviceConfigString('api_key');
 
-        if ($apiKeyHeader === null) {
+        if (null === $apiKeyHeader || '' === $apiKey) {
             return [];
         }
 
         return [
-            $apiKeyHeader => $this->serviceConfigString('api_key'),
+            $apiKeyHeader => $apiKey,
         ];
     }
 
@@ -69,9 +97,9 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
     protected function serviceConfigString(string $key, string $default = ''): string
     {
         $servicePath = "services.{$this->driverName()}.{$key}";
-        $driverPath = "sms_gateway.drivers.{$this->driverName()}.".Str::camel($key);
+        $driverPath = "sms_gateway.drivers.{$this->driverName()}." . Str::camel($key);
 
-        return Config::string($servicePath, fn (): string => Config::string($driverPath, $default));
+        return Config::string($servicePath, fn(): string => Config::string($driverPath, $default));
     }
 
     private function gateway(): string

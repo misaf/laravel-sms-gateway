@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Facade\SmsGateway;
-use Misaf\LaravelSmsGateway\HttpSmsGatewayDriver;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
+use Misaf\LaravelSmsGateway\SmsGatewayDriver;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\ConfigurableDriver;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\InvalidDriver;
 
@@ -22,7 +22,7 @@ test('can register a custom driver via extend', function (): void {
         return $app->make(ConfigurableDriver::class);
     });
 
-    $result = SmsGateway::driver('custom')->send()
+    $result = SmsGateway::driver('custom')->request()
         ->get('health')
         ->json();
 
@@ -62,7 +62,7 @@ test('falls back to legacy driver config when service credentials are missing', 
         'https://legacy.example.com/messages' => Http::response(['ok' => true], 200),
     ]);
 
-    SmsGateway::extend('legacy', fn(): SmsGatewayHandlerInterface => new class () extends HttpSmsGatewayDriver {
+    SmsGateway::extend('legacy', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
         protected function driverName(): string
         {
             return 'legacy';
@@ -79,7 +79,7 @@ test('falls back to legacy driver config when service credentials are missing', 
         }
     });
 
-    SmsGateway::driver('legacy')->send()->get('messages');
+    SmsGateway::driver('legacy')->request()->get('messages');
 
     Http::assertSent(function (Request $request): bool {
         return 'https://legacy.example.com/messages' === $request->url()
@@ -96,7 +96,7 @@ test('dispatches an event after an SMS gateway request receives a response', fun
         'https://events.example.com/messages' => Http::response(['message_id' => 'sms-123'], 202),
     ]);
 
-    SmsGateway::extend('eventful', fn(): SmsGatewayHandlerInterface => new class () extends HttpSmsGatewayDriver {
+    SmsGateway::extend('eventful', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
         protected function driverName(): string
         {
             return 'eventful';
@@ -108,7 +108,7 @@ test('dispatches an event after an SMS gateway request receives a response', fun
         }
     });
 
-    SmsGateway::driver('eventful')->send()
+    SmsGateway::driver('eventful')->request()
         ->post('messages', [
             'message' => 'Hello from event test',
             'to'      => '09123456789',
@@ -125,21 +125,39 @@ test('dispatches an event after an SMS gateway request receives a response', fun
 });
 
 test('prefers the gateway configured in services over the package config and driver default', function (): void {
-    config()->set('sms_gateway.default', 'kavenegar');
-    config()->set('services.kavenegar.api_key', 'test-api-key');
-    config()->set('sms_gateway.drivers.kavenegar.gateway', 'https://package-default.kavenegar.test/v1/');
-    config()->set('services.kavenegar.gateway', 'https://services-override.kavenegar.test/v1/');
+    config()->set('sms_gateway.default', 'overrideable');
+    config()->set('services.overrideable.api_key', 'test-api-key');
+    config()->set('sms_gateway.drivers.overrideable.gateway', 'https://package-default.example.test/v1/');
+    config()->set('services.overrideable.gateway', 'https://services-override.example.test/v1/');
 
     Http::fake([
-        'https://services-override.kavenegar.test/v1/sms/send.json' => Http::response(['ok' => true], 200),
+        'https://services-override.example.test/v1/sms/send.json' => Http::response(['ok' => true], 200),
     ]);
 
-    SmsGateway::driver()->send()->post('sms/send.json', [
+    SmsGateway::extend('overrideable', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
+        protected function driverName(): string
+        {
+            return 'overrideable';
+        }
+
+        protected function defaultGateway(): string
+        {
+            return 'https://driver-default.example.test/v1/';
+        }
+
+        protected function apiKeyHeader(): string
+        {
+            return 'apikey';
+        }
+    });
+
+    SmsGateway::driver()->request()->post('sms/send.json', [
         'receptor' => '09123456789',
         'message'  => 'Hello',
     ]);
 
     Http::assertSent(function (Request $request): bool {
-        return 'https://services-override.kavenegar.test/v1/sms/send.json' === $request->url();
+        return 'https://services-override.example.test/v1/sms/send.json' === $request->url()
+            && $request->hasHeader('apikey', 'test-api-key');
     });
 });
