@@ -37,13 +37,10 @@ test('returns custom driver instances using laravel manager behavior', function 
     expect(SmsGateway::driver('invalid'))->toBeInstanceOf(InvalidDriver::class);
 });
 
-test('falls back to ghasedak when default driver key is missing', function (): void {
-    config()->set('sms_gateway', [
-        'defaults' => config('sms_gateway.defaults'),
-        'drivers'  => config('sms_gateway.drivers'),
-    ]);
+test('uses the configured default driver', function (): void {
+    config()->set('sms_gateway.default', 'sunway');
 
-    expect(app('sms-gateway')->getDefaultDriver())->toBe('ghasedak');
+    expect(app('sms-gateway')->getDefaultDriver())->toBe('sunway');
 });
 
 test('defines shared HTTP client timeout defaults in config', function (): void {

@@ -23,7 +23,7 @@ final class SmsGatewayManager extends Manager
 {
     public function getDefaultDriver(): string
     {
-        return Config::string('sms_gateway.default', 'ghasedak');
+        return Config::string('sms_gateway.default');
     }
 
     protected function createGhasedakDriver(): GhasedakDriver
