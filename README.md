@@ -55,11 +55,17 @@ First-party driver packages:
 
 ## Quick Start
 
+Install the Ghasedak driver package:
+
+```bash
+composer require misaf/laravel-sms-gateway-ghasedak
+```
+
 Set the default driver in `.env`:
 
 ```env
 SMS_GATEWAY_DRIVER=ghasedak # Default driver
-SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key
+SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key # Ghasedak API key
 ```
 
 Add the matching service credentials in `config/services.php`:
@@ -89,38 +95,10 @@ Use `.env` for environment values:
 
 ```env
 SMS_GATEWAY_DRIVER=ghasedak # Default driver
-SMS_GATEWAY_TIMEOUT=10 # Max seconds for the whole request
-SMS_GATEWAY_CONNECT_TIMEOUT=5 # Max seconds to connect
-SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key
+SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key # Ghasedak API key
 ```
 
-Use `config/services.php` for provider credentials:
-
-```php
-'ghasedak' => [
-    'api_key' => env('SMS_GATEWAY_GHASEDAK_APIKEY'),
-    'gateway' => env('SMS_GATEWAY_GHASEDAK_GATEWAY'),
-    'endpoints' => [
-        'default' => env('SMS_GATEWAY_GHASEDAK_ENDPOINT', 'sms/send/simple'),
-    ],
-],
-```
-
-Use `config/sms_gateway.php` for package defaults:
-
-```php
-'default' => env('SMS_GATEWAY_DRIVER', ''),
-
-'defaults' => [
-    'timeout' => env('SMS_GATEWAY_TIMEOUT', 10),
-    'connect_timeout' => env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
-],
-```
-
-Driver values are resolved in this order:
-
-1. `config/services.php`
-2. `config/sms_gateway.php`
+Provider keys like `SMS_GATEWAY_GHASEDAK_APIKEY` are defined by each driver package — see that package's README (linked under [Driver Packages](#driver-packages)) for its environment variables.
 
 ## Dependency Injection
 
