@@ -5,14 +5,14 @@ A driver-based SMS gateway manager for Laravel 13.
 The package provides:
 
 - A `SmsGateway` facade and injectable `SmsGatewayManager`.
-- Built-in HTTP drivers for Ghasedak, Sunway, Kavenegar, Sms.ir, Twilio, Vonage, Plivo, MessageBird, Textlocal, Melipayamak, IPPanel, and Magfa.
+- Built-in HTTP drivers.
 - A common `PendingRequest` API through Laravel's HTTP client.
 - A `SmsSent` event for HTTP-based drivers.
 - A small driver contract for custom gateways.
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.3+
 - Laravel 13+
 
 ## Installation
@@ -278,8 +278,9 @@ Run these commands from the package root:
 ```bash
 composer test
 composer analyse
-composer format
 ```
+
+Code style is checked and fixed by the `Fix Code Style` GitHub Actions workflow using Laravel Pint on PHP 8.3.
 
 ## License
 
