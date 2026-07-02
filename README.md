@@ -5,7 +5,7 @@ A driver-based SMS gateway manager for Laravel. It provides a facade, injectable
 ## Requirements
 
 - PHP 8.2+
-- Laravel 10, 11, 12, or 13
+- Laravel 13+
 
 ## Installation
 
