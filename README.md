@@ -2,7 +2,7 @@
 
 A driver-based SMS gateway manager for Laravel 13.
 
-The core package provides the Laravel-facing SMS gateway manager, facade, driver contract, reusable HTTP driver base class, and send event. Provider-specific integrations are installed as separate Composer packages, so applications only pull in the gateways they actually use.
+The core package provides the Laravel-facing manager, facade, driver contract, reusable HTTP driver base class, and send event. Provider integrations live in separate Composer packages, so applications only install the gateways they use.
 
 ## Features
 
@@ -26,7 +26,7 @@ Install the core package:
 composer require misaf/laravel-sms-gateway
 ```
 
-Install one or more driver packages:
+Install one or more driver packages. Composer will install the core package automatically when a driver requires it:
 
 ```bash
 composer require misaf/laravel-sms-gateway-ghasedak
@@ -43,22 +43,22 @@ php artisan vendor:publish --tag=sms-gateway-config
 
 ## Driver Packages
 
-Available first-party driver packages:
+First-party driver packages:
 
 | Driver | Package |
 | --- | --- |
 | `ghasedak` | `misaf/laravel-sms-gateway-ghasedak` |
-| `sunway` | `misaf/laravel-sms-gateway-sunway` |
+| `ippanel` | `misaf/laravel-sms-gateway-ippanel` |
 | `kavenegar` | `misaf/laravel-sms-gateway-kavenegar` |
+| `magfa` | `misaf/laravel-sms-gateway-magfa` |
+| `melipayamak` | `misaf/laravel-sms-gateway-melipayamak` |
+| `messagebird` | `misaf/laravel-sms-gateway-messagebird` |
+| `plivo` | `misaf/laravel-sms-gateway-plivo` |
 | `smsir` | `misaf/laravel-sms-gateway-smsir` |
+| `sunway` | `misaf/laravel-sms-gateway-sunway` |
+| `textlocal` | `misaf/laravel-sms-gateway-textlocal` |
 | `twilio` | `misaf/laravel-sms-gateway-twilio` |
 | `vonage` | `misaf/laravel-sms-gateway-vonage` |
-| `plivo` | `misaf/laravel-sms-gateway-plivo` |
-| `messagebird` | `misaf/laravel-sms-gateway-messagebird` |
-| `textlocal` | `misaf/laravel-sms-gateway-textlocal` |
-| `melipayamak` | `misaf/laravel-sms-gateway-melipayamak` |
-| `ippanel` | `misaf/laravel-sms-gateway-ippanel` |
-| `magfa` | `misaf/laravel-sms-gateway-magfa` |
 
 ## Quick Start
 
@@ -90,6 +90,8 @@ $response = SmsGateway::driver()->send([
 ]);
 ```
 
+The payload keys are passed directly to the selected provider endpoint. Use the field names expected by that provider.
+
 Select a driver explicitly when needed:
 
 ```php
@@ -99,7 +101,7 @@ $response = SmsGateway::driver('kavenegar')->send([
 ]);
 ```
 
-Use the underlying Laravel HTTP client request when you need lower-level control:
+Use the underlying Laravel HTTP client request for lower-level control:
 
 ```php
 $response = SmsGateway::driver('kavenegar')
@@ -111,11 +113,11 @@ $response = SmsGateway::driver('kavenegar')
     ]);
 ```
 
-`request()` returns an `Illuminate\Http\Client\PendingRequest`, so you can continue with Laravel HTTP client methods such as `get`, `post`, `retry`, `timeout`, `withHeaders`, and `withOptions`.
+`request()` returns an `Illuminate\Http\Client\PendingRequest`, so you can use Laravel HTTP client methods such as `get`, `post`, `retry`, `timeout`, `withHeaders`, and `withOptions`.
 
 ## Configuration
 
-The package reads `sms_gateway.default` to choose the default driver. The published config file uses `SMS_GATEWAY_DRIVER` and defaults to an empty string until you install and configure a driver.
+The package reads `sms_gateway.default` to choose the default driver. The published config uses `SMS_GATEWAY_DRIVER` and defaults to an empty string until you install and configure a driver.
 
 HTTP drivers use these shared timeout values:
 
