@@ -1,17 +1,13 @@
 # Laravel SMS Gateway
 
-A driver-based SMS gateway manager for Laravel 13.
-
-The core package provides the Laravel-facing manager, facade, driver contract, reusable HTTP driver base class, and send event. Provider integrations live in separate Composer packages, so applications only install the gateways they use.
+A simple driver-based SMS gateway manager for Laravel.
 
 ## Features
 
-- `SmsGateway` facade and injectable `SmsGatewayManager`.
-- Driver registration through Laravel's manager `extend()` API.
-- Shared `PendingRequest` API through Laravel's HTTP client.
-- Reusable `SmsGatewayDriver` base class for HTTP-based gateways.
-- `SmsSent` event for drivers that extend the base HTTP driver.
-- Small `SmsGatewayHandlerInterface` contract for custom drivers.
+- Send SMS through a facade or manager.
+- Separate packages for each provider.
+- Laravel HTTP client access.
+- Custom driver registration.
 
 ## Requirements
 
@@ -26,16 +22,13 @@ Install the core package:
 composer require misaf/laravel-sms-gateway
 ```
 
-Install one or more driver packages. Composer will install the core package automatically when a driver requires it:
+Install one or more driver packages:
 
 ```bash
 composer require misaf/laravel-sms-gateway-ghasedak
-composer require misaf/laravel-sms-gateway-kavenegar
 ```
 
-Laravel package discovery registers the core service provider and installed driver service providers automatically.
-
-Publish the core configuration when you need to override defaults:
+Publish the config file:
 
 ```bash
 php artisan vendor:publish --tag=sms-gateway-config
@@ -65,9 +58,7 @@ First-party driver packages:
 Set the default driver in `.env`:
 
 ```env
-SMS_GATEWAY_DRIVER=ghasedak
-SMS_GATEWAY_TIMEOUT=10
-SMS_GATEWAY_CONNECT_TIMEOUT=5
+SMS_GATEWAY_DRIVER=ghasedak # Default driver
 SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key
 ```
 
@@ -90,52 +81,22 @@ $response = SmsGateway::driver()->send([
 ]);
 ```
 
-The payload keys are passed directly to the selected provider endpoint. Use the field names expected by that provider.
-
-Select a driver explicitly when needed:
-
-```php
-$response = SmsGateway::driver('kavenegar')->send([
-    'receptor' => '09123456789',
-    'message'  => 'Hello',
-]);
-```
-
-Use the underlying Laravel HTTP client request for lower-level control:
-
-```php
-$response = SmsGateway::driver('kavenegar')
-    ->request()
-    ->retry(3, 200)
-    ->post('sms/send.json', [
-        'receptor' => '09123456789',
-        'message'  => 'Hello',
-    ]);
-```
-
-`request()` returns an `Illuminate\Http\Client\PendingRequest`, so you can use Laravel HTTP client methods such as `get`, `post`, `retry`, `timeout`, `withHeaders`, and `withOptions`.
+See the original provider documentation for available fields.
 
 ## Configuration
 
-The package reads `sms_gateway.default` to choose the default driver. The published config uses `SMS_GATEWAY_DRIVER` and defaults to an empty string until you install and configure a driver.
-
-HTTP drivers use these shared timeout values:
+Use `.env` for environment values:
 
 ```env
-SMS_GATEWAY_TIMEOUT=10
-SMS_GATEWAY_CONNECT_TIMEOUT=5
+SMS_GATEWAY_DRIVER=ghasedak # Default driver
+SMS_GATEWAY_TIMEOUT=10 # Max seconds for the whole request
+SMS_GATEWAY_CONNECT_TIMEOUT=5 # Max seconds to connect
+SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key
 ```
 
-Drivers extending `SmsGatewayDriver` resolve per-driver values in this order:
-
-1. `services.{driver}.{key}` from `config/services.php`.
-2. `sms_gateway.drivers.{driver}.{camelCaseKey}` from `config/sms_gateway.php`.
-3. The driver's built-in default, when one exists.
-
-For example:
+Use `config/services.php` for provider credentials:
 
 ```php
-// config/services.php
 'ghasedak' => [
     'api_key' => env('SMS_GATEWAY_GHASEDAK_APIKEY'),
     'gateway' => env('SMS_GATEWAY_GHASEDAK_GATEWAY'),
@@ -145,27 +106,25 @@ For example:
 ],
 ```
 
-Set `services.{driver}.gateway` to override a provider's default gateway URL. Set `services.{driver}.endpoints.{name}` to override a built-in endpoint path.
-
-Legacy package-level driver configuration can be kept in `config/sms_gateway.php`:
+Use `config/sms_gateway.php` for package defaults:
 
 ```php
-'drivers' => [
-    'ghasedak' => [
-        'apiKey' => env('SMS_GATEWAY_GHASEDAK_APIKEY'),
-        'gateway' => env('SMS_GATEWAY_GHASEDAK_GATEWAY'),
-        'endpoints' => [
-            'default' => 'sms/send/simple',
-        ],
-    ],
+'default' => env('SMS_GATEWAY_DRIVER', ''),
+
+'defaults' => [
+    'timeout' => env('SMS_GATEWAY_TIMEOUT', 10),
+    'connect_timeout' => env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
 ],
 ```
 
-Service configuration still takes precedence over values in `sms_gateway.drivers`.
+Driver values are resolved in this order:
+
+1. `config/services.php`
+2. `config/sms_gateway.php`
 
 ## Dependency Injection
 
-The manager is bound in the service container as both `sms-gateway` and `Misaf\LaravelSmsGateway\SmsGatewayManager`.
+Inject `Misaf\LaravelSmsGateway\SmsGatewayManager`:
 
 ```php
 use Misaf\LaravelSmsGateway\SmsGatewayManager;
@@ -188,7 +147,7 @@ final class SendWelcomeSms
 
 ## Events
 
-Drivers extending `Misaf\LaravelSmsGateway\SmsGatewayDriver` dispatch `Misaf\LaravelSmsGateway\Events\SmsSent` after the HTTP client receives a response.
+HTTP drivers dispatch `Misaf\LaravelSmsGateway\Events\SmsSent`.
 
 ```php
 use Misaf\LaravelSmsGateway\Events\SmsSent;
@@ -205,7 +164,7 @@ final class StoreSmsGatewayResult
 }
 ```
 
-The event exposes:
+Event properties:
 
 - `$driverName`: the resolved SMS gateway driver name.
 - `$request`: the `Illuminate\Http\Client\Request` instance.
@@ -244,7 +203,7 @@ final class CustomDriver implements SmsGatewayHandlerInterface
 }
 ```
 
-Register the driver from a service provider:
+Register it from a service provider:
 
 ```php
 use App\SmsGateways\CustomDriver;
@@ -264,60 +223,9 @@ final class AppServiceProvider extends ServiceProvider
 }
 ```
 
-Extend `SmsGatewayDriver` when the custom driver should reuse gateway resolution, shared timeouts, API-key headers, endpoint resolution, and `SmsSent` dispatching:
-
-```php
-namespace App\SmsGateways;
-
-use Misaf\LaravelSmsGateway\SmsGatewayDriver;
-
-final class CustomSmsGatewayDriver extends SmsGatewayDriver
-{
-    protected function driverName(): string
-    {
-        return 'custom';
-    }
-
-    protected function defaultGateway(): string
-    {
-        return 'https://api.example.com/';
-    }
-
-    protected function apiKeyHeader(): string
-    {
-        return 'X-API-Key';
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function defaultEndpoints(): array
-    {
-        return [
-            'default' => 'messages',
-            'lookup' => 'messages/lookup',
-        ];
-    }
-}
-```
-
-For drivers extending `SmsGatewayDriver`, values such as `services.custom.api_key`, `services.custom.gateway`, `services.custom.endpoints.default`, and `sms_gateway.drivers.custom.apiKey` are resolved automatically by the base class. If `apiKeyHeader()` returns a header name, the base class sends that header only when the resolved `api_key` value is not empty.
-
-You can send through a named endpoint by passing the resolved endpoint to `send()`:
-
-```php
-/** @var \App\SmsGateways\CustomSmsGatewayDriver $driver */
-$driver = SmsGateway::driver('custom');
-
-$response = $driver->send(
-    ['mobile' => '09123456789', 'code' => '123456'],
-    $driver->endpoint('lookup'),
-);
-```
-
 ## Creating Driver Packages
 
-A driver package should require this core package, provide a concrete driver class, and register itself with the manager from its package service provider:
+A driver package registers its driver from its service provider:
 
 ```php
 use Illuminate\Contracts\Foundation\Application;
@@ -329,7 +237,7 @@ $this->app->afterResolving(SmsGatewayManager::class, function (SmsGatewayManager
 });
 ```
 
-Add the driver package service provider to that package's `composer.json`:
+Add the service provider to the driver package `composer.json`:
 
 ```json
 {
@@ -343,11 +251,12 @@ Add the driver package service provider to that package's `composer.json`:
 }
 ```
 
-## Testing and Analysis
+## Quality Checks
 
-Run these commands from the package root:
+Run before committing:
 
 ```bash
+vendor/bin/pint
 composer test
 composer analyse
 ```
