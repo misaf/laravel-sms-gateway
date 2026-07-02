@@ -1,3 +1,4 @@
 /vendor
 pint.json
 composer.lock
+.DS_Store
