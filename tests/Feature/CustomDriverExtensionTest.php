@@ -29,13 +29,12 @@ test('can register a custom driver via extend', function (): void {
     expect($result)->toBe(['ok' => true]);
 });
 
-test('throws an exception when an extended driver is invalid', function (): void {
+test('returns custom driver instances using laravel manager behavior', function (): void {
     SmsGateway::extend('invalid', function (Application $app): object {
         return $app->make(InvalidDriver::class);
     });
 
-    expect(fn(): mixed => SmsGateway::driver('invalid'))
-        ->toThrow(InvalidArgumentException::class, 'must implement');
+    expect(SmsGateway::driver('invalid'))->toBeInstanceOf(InvalidDriver::class);
 });
 
 test('falls back to ghasedak when default driver key is missing', function (): void {

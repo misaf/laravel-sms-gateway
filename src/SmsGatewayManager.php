@@ -6,7 +6,6 @@ namespace Misaf\LaravelSmsGateway;
 
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Manager;
-use InvalidArgumentException;
 use Misaf\LaravelSmsGateway\Drivers\GhasedakDriver;
 use Misaf\LaravelSmsGateway\Drivers\IppanelDriver;
 use Misaf\LaravelSmsGateway\Drivers\KavenegarDriver;
@@ -19,24 +18,12 @@ use Misaf\LaravelSmsGateway\Drivers\SunwayDriver;
 use Misaf\LaravelSmsGateway\Drivers\TextlocalDriver;
 use Misaf\LaravelSmsGateway\Drivers\TwilioDriver;
 use Misaf\LaravelSmsGateway\Drivers\VonageDriver;
-use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
 final class SmsGatewayManager extends Manager
 {
     public function getDefaultDriver(): string
     {
         return Config::string('sms_gateway.default', 'ghasedak');
-    }
-
-    protected function createDriver($driver): SmsGatewayHandlerInterface
-    {
-        $resolvedDriver = parent::createDriver($driver);
-
-        if ( ! $resolvedDriver instanceof SmsGatewayHandlerInterface) {
-            throw new InvalidArgumentException("Driver [{$driver}] must implement [" . SmsGatewayHandlerInterface::class . '].');
-        }
-
-        return $resolvedDriver;
     }
 
     protected function createGhasedakDriver(): GhasedakDriver
