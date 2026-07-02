@@ -1,12 +1,15 @@
 {
-	"name": "misaf/laravel-sms-gateway",
-	"description": "Supercharge your Laravel applications with our seamless SMS Gateway integration!",
+    "name": "misaf/laravel-sms-gateway",
+    "description": "A driver-based SMS gateway manager for Laravel.",
+    "type": "library",
     "license": "MIT",
-	"keywords": [
+    "keywords": [
         "laravel",
         "misaf",
+        "sms",
+        "sms-gateway",
         "vendra",
-        "sms-gateway"
+        "gateway"
     ],
     "homepage": "https://github.com/misaf/laravel-sms-gateway",
     "support": {
@@ -21,16 +24,17 @@
         }
     ],
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
+        "illuminate/contracts": "^13.0",
+        "illuminate/http": "^13.0",
         "illuminate/support": "^13.0",
         "spatie/laravel-package-tools": "^1.92"
     },
     "require-dev": {
-		"guzzlehttp/guzzle": "^7.10",
         "fakerphp/faker": "^1.24.1",
+        "guzzlehttp/guzzle": "^7.10",
         "larastan/larastan": "^3.9.2",
         "laravel/boost": "^2.0.6",
-        "laravel/pint": "^1.27",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8.3",
         "orchestra/testbench": "^11.0",
@@ -39,26 +43,29 @@
         "pestphp/pest-plugin-laravel": "^4.0",
         "pestphp/pest-plugin-profanity": "^4.2.1",
         "pestphp/pest-plugin-type-coverage": "^4.0.3"
-	},
+    },
     "scripts": {
         "analyse": "vendor/bin/phpstan analyse",
         "test": "vendor/bin/pest",
-        "test-coverage": "vendor/bin/pest --coverage",
-        "format": "vendor/bin/pint"
+        "test-coverage": "vendor/bin/pest --coverage"
     },
-	"autoload": {
-		"psr-4": {
-			"Misaf\\LaravelSmsGateway\\": "src/",
+    "autoload": {
+        "psr-4": {
+            "Misaf\\LaravelSmsGateway\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
             "Misaf\\LaravelSmsGateway\\Tests\\": "tests/"
-		}
-	},
-	"extra": {
-		"laravel": {
-			"providers": [
-				"Misaf\\LaravelSmsGateway\\SmsGatewayServiceProvider"
-			]
-		}
-	},
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Misaf\\LaravelSmsGateway\\SmsGatewayServiceProvider"
+            ]
+        }
+    },
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
