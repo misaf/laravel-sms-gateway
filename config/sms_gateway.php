@@ -29,8 +29,8 @@ return [
     */
 
     'defaults' => [
-        'timeout'         => (int) env('SMS_GATEWAY_TIMEOUT', 10),
-        'connect_timeout' => (int) env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
+        'timeout'         => env('SMS_GATEWAY_TIMEOUT', 10),
+        'connect_timeout' => env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
     ],
 
     /*
