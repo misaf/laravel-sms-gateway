@@ -7,23 +7,23 @@ namespace Misaf\LaravelSmsGateway\Drivers;
 use Illuminate\Http\Client\PendingRequest;
 use Misaf\LaravelSmsGateway\HttpSmsGatewayDriver;
 
-final class SunwayDriver extends HttpSmsGatewayDriver
+final class PlivoDriver extends HttpSmsGatewayDriver
 {
     protected function driverName(): string
     {
-        return 'sunway';
+        return 'plivo';
     }
 
     protected function defaultGateway(): string
     {
-        return 'https://sms.sunwaysms.com/smsws/HttpService.ashx';
+        return "https://api.plivo.com/v1/Account/{$this->serviceConfigString('auth_id')}/";
     }
 
     protected function configureRequest(PendingRequest $request): PendingRequest
     {
-        return $request->withQueryParameters([
-            'UserName' => $this->serviceConfigString('username'),
-            'Password' => $this->serviceConfigString('password'),
-        ]);
+        return $request
+            ->withBasicAuth($this->serviceConfigString('auth_id'), $this->serviceConfigString('auth_token'))
+            ->acceptJson()
+            ->asJson();
     }
 }

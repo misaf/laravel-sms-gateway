@@ -7,23 +7,25 @@ namespace Misaf\LaravelSmsGateway\Drivers;
 use Illuminate\Http\Client\PendingRequest;
 use Misaf\LaravelSmsGateway\HttpSmsGatewayDriver;
 
-final class SunwayDriver extends HttpSmsGatewayDriver
+final class MelipayamakDriver extends HttpSmsGatewayDriver
 {
     protected function driverName(): string
     {
-        return 'sunway';
+        return 'melipayamak';
     }
 
     protected function defaultGateway(): string
     {
-        return 'https://sms.sunwaysms.com/smsws/HttpService.ashx';
+        return 'https://rest.payamak-panel.com/api/';
     }
 
     protected function configureRequest(PendingRequest $request): PendingRequest
     {
-        return $request->withQueryParameters([
-            'UserName' => $this->serviceConfigString('username'),
-            'Password' => $this->serviceConfigString('password'),
-        ]);
+        return $request
+            ->asForm()
+            ->withQueryParameters([
+                'username' => $this->serviceConfigString('username'),
+                'password' => $this->serviceConfigString('password'),
+            ]);
     }
 }

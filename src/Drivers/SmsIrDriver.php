@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Misaf\LaravelSmsGateway\Drivers;
 
+use Illuminate\Http\Client\PendingRequest;
 use Misaf\LaravelSmsGateway\HttpSmsGatewayDriver;
 
 final class SmsIrDriver extends HttpSmsGatewayDriver
@@ -20,11 +21,11 @@ final class SmsIrDriver extends HttpSmsGatewayDriver
 
     protected function apiKeyHeader(): string
     {
-        return $this->serviceConfigString('api_key_header', 'apiKeyHeader', 'X-API-KEY');
+        return $this->serviceConfigString('api_key_header', 'X-API-KEY');
     }
 
-    protected function acceptsJson(): bool
+    protected function configureRequest(PendingRequest $request): PendingRequest
     {
-        return true;
+        return $request->acceptJson();
     }
 }

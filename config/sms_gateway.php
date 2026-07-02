@@ -11,7 +11,9 @@ return [
     | This option sets the default SMS gateway driver for requests.
     | You may specify any of the other available drivers provided here.
     |
-    | Supported: "ghasedak", "sunway", "kavenegar", "smsir"
+    | Supported: "ghasedak", "sunway", "kavenegar", "smsir", "twilio",
+    | "vonage", "plivo", "messagebird", "textlocal", "melipayamak",
+    | "ippanel", "magfa"
     |
     */
 
@@ -27,7 +29,7 @@ return [
     */
 
     'defaults' => [
-        'timeout' => (int) env('SMS_GATEWAY_TIMEOUT', 10),
+        'timeout'         => (int) env('SMS_GATEWAY_TIMEOUT', 10),
         'connect_timeout' => (int) env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
     ],
 
@@ -36,30 +38,18 @@ return [
     | SMS Gateway Drivers
     |--------------------------------------------------------------------------
     |
-    | Here, you can define all the SMS gateway 'drivers' for your application
-    | along with their configurations.
+    | Per-driver credentials and gateways are configured in config/services.php,
+    | following Laravel's convention for third-party service credentials. Values
+    | set there take precedence; anything defined here acts as a shared default,
+    | and each driver falls back to its own built-in default gateway when
+    | neither is set.
     |
-    | Supported drivers: "ghasedak", "sunway", "kavenegar", "smsir"
+    | Supported drivers: "ghasedak", "sunway", "kavenegar", "smsir",
+    | "twilio", "vonage", "plivo", "messagebird", "textlocal",
+    | "melipayamak", "ippanel", "magfa"
     |
     */
 
-    'drivers' => [
-
-        'ghasedak' => [
-        ],
-
-        'sunway' => [
-            'gateway' => env('SMS_GATEWAY_SUNWAY_GATEWAY', 'https://sms.sunwaysms.com/smsws/HttpService.ashx'),
-        ],
-
-        'kavenegar' => [
-            'gateway' => env('SMS_GATEWAY_KAVENEGAR_GATEWAY', 'https://api.kavenegar.com/v1/'),
-        ],
-
-        'smsir' => [
-            'gateway' => env('SMS_GATEWAY_SMSIR_GATEWAY', 'https://api.sms.ir/v1/'),
-        ],
-
-    ],
+    'drivers' => [],
 
 ];

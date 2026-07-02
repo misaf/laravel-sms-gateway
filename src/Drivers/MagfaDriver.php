@@ -7,23 +7,23 @@ namespace Misaf\LaravelSmsGateway\Drivers;
 use Illuminate\Http\Client\PendingRequest;
 use Misaf\LaravelSmsGateway\HttpSmsGatewayDriver;
 
-final class SunwayDriver extends HttpSmsGatewayDriver
+final class MagfaDriver extends HttpSmsGatewayDriver
 {
     protected function driverName(): string
     {
-        return 'sunway';
+        return 'magfa';
     }
 
     protected function defaultGateway(): string
     {
-        return 'https://sms.sunwaysms.com/smsws/HttpService.ashx';
+        return 'https://sms.magfa.com/api/http/sms/v2/';
     }
 
     protected function configureRequest(PendingRequest $request): PendingRequest
     {
-        return $request->withQueryParameters([
-            'UserName' => $this->serviceConfigString('username'),
-            'Password' => $this->serviceConfigString('password'),
-        ]);
+        return $request
+            ->withBasicAuth($this->serviceConfigString('username'), $this->serviceConfigString('password'))
+            ->acceptJson()
+            ->asJson();
     }
 }

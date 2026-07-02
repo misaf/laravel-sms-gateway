@@ -14,5 +14,3 @@ declare(strict_types=1);
 */
 
 uses(Misaf\LaravelSmsGateway\Tests\TestCase::class)->in('Feature');
-
-uses(Misaf\LaravelSmsGateway\Tests\TestCase::class)->in('Unit');

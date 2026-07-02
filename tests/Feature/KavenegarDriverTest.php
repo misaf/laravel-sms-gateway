@@ -19,15 +19,15 @@ test('can send request through kavenegar driver', function (): void {
     $response = SmsGateway::driver()->send()
         ->post('sms/send.json', [
             'receptor' => '09123456789',
-            'message' => 'Hello from kavenegar',
+            'message'  => 'Hello from kavenegar',
         ])
         ->json();
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://api.kavenegar.com/v1/sms/send.json'
+        return 'https://api.kavenegar.com/v1/sms/send.json' === $request->url()
             && $request->hasHeader('apikey', 'test-api-key')
-            && $request['receptor'] === '09123456789'
-            && $request['message'] === 'Hello from kavenegar';
+            && '09123456789' === $request['receptor']
+            && 'Hello from kavenegar' === $request['message'];
     });
 
     expect($response['return']['status'])->toBe(200);

@@ -9,6 +9,7 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
@@ -22,16 +23,13 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
             ->timeout(Config::integer('sms_gateway.defaults.timeout'))
             ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'))
             ->withHeaders($this->headers())
-            ->withQueryParameters($this->queryParameters())
             ->beforeSending(function (Request $request) use (&$sentRequest): void {
                 $sentRequest = $request;
             });
 
-        if ($this->acceptsJson()) {
-            $request = $request->acceptJson();
-        }
-
-        return $request->afterResponse(function (Response $response) use (&$sentRequest): void {
+        // Laravel 12 invokes after-response callbacks without the request argument,
+        // so the request must be paired manually via the beforeSending capture.
+        return $this->configureRequest($request)->afterResponse(function (Response $response) use (&$sentRequest): void {
             if ($sentRequest instanceof Request) {
                 SmsSent::dispatch($this->driverName(), $sentRequest, $response);
             }
@@ -49,26 +47,21 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
     {
         $apiKeyHeader = $this->apiKeyHeader();
 
-        if ($apiKeyHeader === null) {
+        if (null === $apiKeyHeader) {
             return [];
         }
 
         return [
-            $apiKeyHeader => $this->serviceConfigString('api_key', 'apiKey'),
+            $apiKeyHeader => $this->serviceConfigString('api_key'),
         ];
     }
 
     /**
-     * @return array<string, string>
+     * Apply driver-specific options to the outgoing request.
      */
-    protected function queryParameters(): array
+    protected function configureRequest(PendingRequest $request): PendingRequest
     {
-        return [];
-    }
-
-    protected function acceptsJson(): bool
-    {
-        return false;
+        return $request;
     }
 
     protected function apiKeyHeader(): ?string
@@ -76,26 +69,20 @@ abstract class HttpSmsGatewayDriver implements SmsGatewayHandlerInterface
         return null;
     }
 
-    protected function serviceConfigString(string $serviceKey, string $legacyDriverKey, string $default = ''): string
+    /**
+     * Resolves `services.{driver}.{key}`, falling back to the camelCase
+     * `sms_gateway.drivers.{driver}.{key}` entry, then the given default.
+     */
+    protected function serviceConfigString(string $key, string $default = ''): string
     {
-        return Config::string(
-            $this->serviceConfigPath($serviceKey),
-            Config::string($this->configPath($legacyDriverKey), $default),
-        );
+        $servicePath = "services.{$this->driverName()}.{$key}";
+        $driverPath = "sms_gateway.drivers.{$this->driverName()}." . Str::camel($key);
+
+        return Config::string($servicePath, fn(): string => Config::string($driverPath, $default));
     }
 
     private function gateway(): string
     {
-        return Config::string($this->configPath('gateway'), $this->defaultGateway());
-    }
-
-    private function configPath(string $key): string
-    {
-        return "sms_gateway.drivers.{$this->driverName()}.{$key}";
-    }
-
-    private function serviceConfigPath(string $key): string
-    {
-        return "services.{$this->driverName()}.{$key}";
+        return $this->serviceConfigString('gateway', $this->defaultGateway());
     }
 }

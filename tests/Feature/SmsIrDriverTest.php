@@ -12,23 +12,23 @@ test('can send request through smsir driver', function (): void {
 
     Http::fake([
         'https://api.sms.ir/v1/send' => Http::response([
-            'status' => 1,
+            'status'  => 1,
             'message' => 'ok',
         ], 200),
     ]);
 
     $response = SmsGateway::driver()->send()
         ->post('send', [
-            'mobile' => '09123456789',
+            'mobile'  => '09123456789',
             'message' => 'Hello from sms.ir',
         ])
         ->json();
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://api.sms.ir/v1/send'
+        return 'https://api.sms.ir/v1/send' === $request->url()
             && $request->hasHeader('X-API-KEY', 'smsir-api-key')
-            && $request['mobile'] === '09123456789'
-            && $request['message'] === 'Hello from sms.ir';
+            && '09123456789' === $request['mobile']
+            && 'Hello from sms.ir' === $request['message'];
     });
 
     expect($response['status'])->toBe(1);

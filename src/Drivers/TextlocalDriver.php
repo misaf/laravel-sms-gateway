@@ -7,23 +7,24 @@ namespace Misaf\LaravelSmsGateway\Drivers;
 use Illuminate\Http\Client\PendingRequest;
 use Misaf\LaravelSmsGateway\HttpSmsGatewayDriver;
 
-final class SunwayDriver extends HttpSmsGatewayDriver
+final class TextlocalDriver extends HttpSmsGatewayDriver
 {
     protected function driverName(): string
     {
-        return 'sunway';
+        return 'textlocal';
     }
 
     protected function defaultGateway(): string
     {
-        return 'https://sms.sunwaysms.com/smsws/HttpService.ashx';
+        return 'https://api.txtlocal.com/';
     }
 
     protected function configureRequest(PendingRequest $request): PendingRequest
     {
-        return $request->withQueryParameters([
-            'UserName' => $this->serviceConfigString('username'),
-            'Password' => $this->serviceConfigString('password'),
-        ]);
+        return $request
+            ->asForm()
+            ->withQueryParameters([
+                'apikey' => $this->serviceConfigString('api_key'),
+            ]);
     }
 }

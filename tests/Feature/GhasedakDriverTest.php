@@ -18,16 +18,16 @@ test('can send simple SMS via Ghasedak driver', function (): void {
 
     $result = SmsGateway::driver()->send()
         ->post('sms/send/simple', [
-            'message' => 'Here is a test message, as described in the documentation.',
+            'message'  => 'Here is a test message, as described in the documentation.',
             'receptor' => '+989119632587',
         ])
         ->json();
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://api.ghasedak.me/v2/sms/send/simple'
+        return 'https://api.ghasedak.me/v2/sms/send/simple' === $request->url()
             && $request->hasHeader('apikey', 'ghasedak-api-key')
-            && $request['message'] === 'Here is a test message, as described in the documentation.'
-            && $request['receptor'] === '+989119632587';
+            && 'Here is a test message, as described in the documentation.' === $request['message']
+            && '+989119632587' === $request['receptor'];
     });
 
     expect($result)->toEqual($response);
@@ -45,17 +45,17 @@ test('can send simple SMS with line number via Ghasedak driver', function (): vo
 
     $result = SmsGateway::driver()->send()
         ->post('sms/send/simple', [
-            'message' => 'Here is a test message, as described in the documentation.',
-            'receptor' => '+989119632587',
+            'message'    => 'Here is a test message, as described in the documentation.',
+            'receptor'   => '+989119632587',
             'linenumber' => config('services.ghasedak.line_number'),
         ])
         ->json();
 
     Http::assertSent(function (Request $request): bool {
-        return $request->url() === 'https://api.ghasedak.me/v2/sms/send/simple'
-            && $request['message'] === 'Here is a test message, as described in the documentation.'
-            && $request['receptor'] === '+989119632587'
-            && $request['linenumber'] === '300050040007';
+        return 'https://api.ghasedak.me/v2/sms/send/simple' === $request->url()
+            && 'Here is a test message, as described in the documentation.' === $request['message']
+            && '+989119632587' === $request['receptor']
+            && '300050040007' === $request['linenumber'];
     });
 
     expect($result)->toEqual($response);
@@ -75,8 +75,8 @@ test('can get account info via Ghasedak driver', function (): void {
         ->json();
 
     Http::assertSent(function (Request $request): bool {
-        return $request->method() === 'GET'
-            && $request->url() === 'https://api.ghasedak.me/v2/account/info';
+        return 'GET' === $request->method()
+            && 'https://api.ghasedak.me/v2/account/info' === $request->url();
     });
 
     expect($result)->toEqual($response);
