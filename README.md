@@ -113,7 +113,7 @@ Use `request()` to send directly through the configured Laravel HTTP client for 
 ```php
 $response = SmsGateway::driver('ghasedak')
     ->request()
-    ->post('sms/send.json', $data);
+    ->post('sms/send/simple', $data);
 ```
 
 Use either `send()` or `request()` — after calling `request()->post(...)`, you do not need to call `send()`.
@@ -147,6 +147,8 @@ Event properties:
 
 Custom drivers should extend `SmsGatewayDriver`, implement `send()`, and use `configureRequest()` for driver-specific HTTP client options.
 
+The driver name is taken from the `extend()` registration key; it selects the `services.{name}` config section and labels `SmsSent` events. Override `driverName()` only when those should use a different name.
+
 ```php
 namespace App\SmsGateways;
 
@@ -162,11 +164,6 @@ final class CustomDriver extends SmsGatewayDriver
     public function send(array $data): Response
     {
         return $this->request()->post('messages', $data);
-    }
-
-    protected function driverName(): string
-    {
-        return 'custom';
     }
 
     protected function defaultBaseUrl(): string
@@ -188,13 +185,12 @@ use App\SmsGateways\CustomDriver;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Misaf\LaravelSmsGateway\Facade\SmsGateway;
-use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
 final class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        SmsGateway::extend('custom', function (Application $app): SmsGatewayHandlerInterface {
+        SmsGateway::extend('custom', function (Application $app): CustomDriver {
             return $app->make(CustomDriver::class);
         });
     }

@@ -17,11 +17,6 @@ final class CustomSmsGatewayDriver extends SmsGatewayDriver
         return $this->request()->post('messages', $data);
     }
 
-    protected function driverName(): string
-    {
-        return 'custom';
-    }
-
     protected function defaultBaseUrl(): string
     {
         return 'https://custom.example.com';
