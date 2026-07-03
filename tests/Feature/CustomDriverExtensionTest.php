@@ -43,6 +43,12 @@ test('uses the configured default driver', function (): void {
     expect(app('sms-gateway')->getDefaultDriver())->toBe('sunway');
 });
 
+test('returns null when no default driver is configured', function (): void {
+    config()->set('sms_gateway.default', null);
+
+    expect(SmsGateway::getDefaultDriver())->toBeNull();
+});
+
 test('defines shared HTTP client timeout defaults in config', function (): void {
     expect(config('sms_gateway.defaults'))
         ->toMatchArray([

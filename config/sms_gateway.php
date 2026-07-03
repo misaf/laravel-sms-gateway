@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('SMS_GATEWAY_DRIVER', ''),
+    'default' => env('SMS_GATEWAY_DRIVER'),
 
     /*
     |--------------------------------------------------------------------------
