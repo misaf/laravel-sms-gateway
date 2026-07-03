@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-sms-gateway` will be documented in this file.
 
+## 2.0.0 - 2026-07-03
+
+<!-- Release notes generated using configuration in .github/release.yml at 97e02c09a9ae4e802545e3596d66410555ab567d -->
+
+
+
+**Full Changelog**: https://github.com/misaf/laravel-sms-gateway/compare/v1.0.0...v2.0.0
+
 ## 1.0.0 - 2026-07-03
 
 <!-- Release notes generated using configuration in .github/release.yml at c920840c53a94f53bb7b0184279cf4f410dd864d -->
