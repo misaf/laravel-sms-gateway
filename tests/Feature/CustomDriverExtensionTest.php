@@ -76,7 +76,7 @@ test('dispatches an event after an SMS gateway request receives a response', fun
             return 'eventful';
         }
 
-        protected function defaultGateway(): string
+        protected function defaultBaseUrl(): string
         {
             return 'https://events.example.com/';
         }
@@ -98,10 +98,10 @@ test('dispatches an event after an SMS gateway request receives a response', fun
     });
 });
 
-test('prefers the gateway configured in services over the package config and driver default', function (): void {
+test('prefers the base URL configured in services over the driver default', function (): void {
     config()->set('sms_gateway.default', 'overrideable');
     config()->set('services.overrideable.api_key', 'test-api-key');
-    config()->set('services.overrideable.gateway', 'https://services-override.example.test/v1/');
+    config()->set('services.overrideable.base_url', 'https://services-override.example.test/v1/');
 
     Http::fake([
         'https://services-override.example.test/v1/sms/send.json' => Http::response(['ok' => true], 200),
@@ -113,7 +113,7 @@ test('prefers the gateway configured in services over the package config and dri
             return 'overrideable';
         }
 
-        protected function defaultGateway(): string
+        protected function defaultBaseUrl(): string
         {
             return 'https://driver-default.example.test/v1/';
         }
