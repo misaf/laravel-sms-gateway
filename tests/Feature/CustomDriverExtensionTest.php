@@ -58,39 +58,7 @@ test('defines shared HTTP client timeout defaults in config', function (): void 
 });
 
 test('does not define per driver config defaults out of the box', function (): void {
-    expect(config('sms_gateway.drivers'))->toBe([]);
-});
-
-test('falls back to legacy driver config when service credentials are missing', function (): void {
-    config()->set('sms_gateway.drivers.legacy.apiKey', 'legacy-api-key');
-
-    Http::fake([
-        'https://legacy.example.com/messages' => Http::response(['ok' => true], 200),
-    ]);
-
-    SmsGateway::extend('legacy', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
-        protected function driverName(): string
-        {
-            return 'legacy';
-        }
-
-        protected function defaultGateway(): string
-        {
-            return 'https://legacy.example.com/';
-        }
-
-        protected function apiKeyHeader(): string
-        {
-            return 'apikey';
-        }
-    });
-
-    SmsGateway::driver('legacy')->request()->get('messages');
-
-    Http::assertSent(function (Request $request): bool {
-        return 'https://legacy.example.com/messages' === $request->url()
-            && $request->hasHeader('apikey', 'legacy-api-key');
-    });
+    expect(config('sms_gateway.drivers'))->toBeNull();
 });
 
 test('dispatches an event after an SMS gateway request receives a response', function (): void {
@@ -133,7 +101,6 @@ test('dispatches an event after an SMS gateway request receives a response', fun
 test('prefers the gateway configured in services over the package config and driver default', function (): void {
     config()->set('sms_gateway.default', 'overrideable');
     config()->set('services.overrideable.api_key', 'test-api-key');
-    config()->set('sms_gateway.drivers.overrideable.gateway', 'https://package-default.example.test/v1/');
     config()->set('services.overrideable.gateway', 'https://services-override.example.test/v1/');
 
     Http::fake([

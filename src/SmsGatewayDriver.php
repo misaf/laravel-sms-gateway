@@ -9,7 +9,6 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
@@ -90,16 +89,9 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
         return null;
     }
 
-    /**
-     * Resolves `services.{driver}.{key}`, falling back to the camelCase
-     * `sms_gateway.drivers.{driver}.{key}` entry, then the given default.
-     */
     protected function serviceConfigString(string $key, string $default = ''): string
     {
-        $servicePath = "services.{$this->driverName()}.{$key}";
-        $driverPath = "sms_gateway.drivers.{$this->driverName()}." . Str::camel($key);
-
-        return Config::string($servicePath, fn(): string => Config::string($driverPath, $default));
+        return Config::string("services.{$this->driverName()}.{$key}", $default);
     }
 
     private function gateway(): string
