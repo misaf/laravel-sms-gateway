@@ -17,12 +17,7 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
     /**
      * @param array<string, mixed> $data
      */
-    final public function send(array $data, ?string $endpoint = null): Response
-    {
-        $endpoint ??= $this->endpoint();
-
-        return $this->request()->post('' === $endpoint ? $this->driverBaseUrl() : $endpoint, $data);
-    }
+    abstract public function send(array $data): Response;
 
     final public function request(): PendingRequest
     {
@@ -38,26 +33,9 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
         });
     }
 
-    final public function endpoint(string $name = 'default'): string
-    {
-        $servicePath = "services.{$this->driverName()}.endpoints.{$name}";
-        $driverPath = "sms_gateway.drivers.{$this->driverName()}.endpoints.{$name}";
-        $default = $this->defaultEndpoints()[$name] ?? ('default' === $name ? '' : $name);
-
-        return Config::string($servicePath, fn(): string => Config::string($driverPath, $default));
-    }
-
     abstract protected function driverName(): string;
 
     abstract protected function defaultBaseUrl(): string;
-
-    /**
-     * @return array<string, string>
-     */
-    protected function defaultEndpoints(): array
-    {
-        return [];
-    }
 
     /**
      * @return array<string, string>
