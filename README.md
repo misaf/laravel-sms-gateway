@@ -4,9 +4,10 @@ A simple driver-based SMS gateway manager for Laravel.
 
 ## Features
 
-- Send SMS through a facade or manager.
 - Separate packages for each provider.
+- Switch drivers per request.
 - Laravel HTTP client access.
+- SMS sent events with request and response data.
 - Custom driver registration.
 
 ## Requirements
@@ -91,14 +92,31 @@ See the original provider documentation for available fields.
 
 ## Configuration
 
-Use `.env` for environment values:
+Set `SMS_GATEWAY_DRIVER` in your application's `.env` file to choose the default driver.
 
-```env
-SMS_GATEWAY_DRIVER=ghasedak # Default driver
-SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key # Ghasedak API key
+Provider environment keys are defined by each driver package — see that package's README (linked under [Driver Packages](#driver-packages)) for its variables.
+
+### Switching Drivers
+
+Use `driver()` to send through a specific driver without changing the default:
+
+```php
+SmsGateway::driver('ghasedak')->send($data);
+
+SmsGateway::driver('kavenegar')->send($data);
 ```
 
-Provider keys like `SMS_GATEWAY_GHASEDAK_APIKEY` are defined by each driver package — see that package's README (linked under [Driver Packages](#driver-packages)) for its environment variables.
+### HTTP Client Access
+
+Use `request()` to access the configured Laravel HTTP client for a driver:
+
+```php
+$response = SmsGateway::driver('ghasedak')
+    ->request()
+    ->post('sms/send.json', $data);
+```
+
+Use either `send()` or `request()` — after calling `request()->post(...)`, you do not need to call `send()`.
 
 ## Events
 
