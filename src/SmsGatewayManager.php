@@ -9,8 +9,10 @@ use Illuminate\Support\Manager;
 
 final class SmsGatewayManager extends Manager
 {
-    public function getDefaultDriver(): string
+    public function getDefaultDriver(): ?string
     {
-        return Config::string('sms_gateway.default');
+        $driver = Config::get('sms_gateway.default');
+
+        return is_string($driver) ? $driver : null;
     }
 }
