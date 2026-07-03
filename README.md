@@ -108,7 +108,7 @@ SmsGateway::driver('kavenegar')->send($data);
 
 ### HTTP Client Access
 
-Use `request()` to access the configured Laravel HTTP client for a driver:
+Use `request()` to send directly through the configured Laravel HTTP client for a driver:
 
 ```php
 $response = SmsGateway::driver('ghasedak')
@@ -145,33 +145,38 @@ Event properties:
 
 ## Custom Drivers
 
-Custom drivers must implement `send()` and `request()`.
+Custom drivers should extend `SmsGatewayDriver`, implement `send()`, and use `configureRequest()` for driver-specific HTTP client options.
 
 ```php
 namespace App\SmsGateways;
 
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\Http;
-use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
+use Misaf\LaravelSmsGateway\SmsGatewayDriver;
 
-final class CustomDriver implements SmsGatewayHandlerInterface
+final class CustomDriver extends SmsGatewayDriver
 {
     /**
      * @param array<string, mixed> $data
      */
-    public function send(array $data, ?string $endpoint = null): Response
+    public function send(array $data): Response
     {
-        return $this->request()->post($endpoint ?? 'messages', $data);
+        return $this->request()->post('messages', $data);
     }
 
-    public function request(): PendingRequest
+    protected function driverName(): string
     {
-        return Http::withToken(Config::string('services.custom.token'))
-            ->baseUrl(Config::string('services.custom.gateway', 'https://api.example.com'))
-            ->timeout(Config::integer('sms_gateway.defaults.timeout'))
-            ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'));
+        return 'custom';
+    }
+
+    protected function defaultBaseUrl(): string
+    {
+        return 'https://api.example.com';
+    }
+
+    protected function configureRequest(PendingRequest $request): PendingRequest
+    {
+        return $request->withToken($this->driverConfig('token'));
     }
 }
 ```
@@ -192,34 +197,6 @@ final class AppServiceProvider extends ServiceProvider
         SmsGateway::extend('custom', function (Application $app): SmsGatewayHandlerInterface {
             return $app->make(CustomDriver::class);
         });
-    }
-}
-```
-
-## Creating Driver Packages
-
-A driver package registers its driver from its service provider:
-
-```php
-use Illuminate\Contracts\Foundation\Application;
-use Misaf\LaravelSmsGateway\SmsGatewayManager;
-use Vendor\SmsGatewayExample\Drivers\ExampleDriver;
-
-$this->app->afterResolving(SmsGatewayManager::class, function (SmsGatewayManager $manager, Application $app): void {
-    $manager->extend('example', fn (): ExampleDriver => $app->make(ExampleDriver::class));
-});
-```
-
-Add the service provider to the driver package `composer.json`:
-
-```json
-{
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Vendor\\SmsGatewayExample\\SmsGatewayExampleServiceProvider"
-            ]
-        }
     }
 }
 ```
