@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Http\Client\Response;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
