@@ -24,7 +24,7 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
         $request = Http::baseUrl($this->driverBaseUrl())
             ->timeout(Config::integer('sms_gateway.defaults.timeout'))
             ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'))
-            ->withHeaders($this->headers());
+            ->withHeaders($this->driverHeaders());
 
         return $this->configureRequest($request)->afterResponse(function (Response $response, Request $request): Response {
             SmsSent::dispatch($this->driverName(), $request, $response);
@@ -36,23 +36,6 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
     abstract protected function driverName(): string;
 
     abstract protected function defaultBaseUrl(): string;
-
-    /**
-     * @return array<string, string>
-     */
-    protected function headers(): array
-    {
-        $apiKeyHeader = $this->apiKeyHeader();
-        $apiKey = $this->serviceConfigString('api_key');
-
-        if (null === $apiKeyHeader || '' === $apiKey) {
-            return [];
-        }
-
-        return [
-            $apiKeyHeader => $apiKey,
-        ];
-    }
 
     /**
      * Apply driver-specific options to the outgoing request.
@@ -67,13 +50,30 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
         return null;
     }
 
-    protected function serviceConfigString(string $key, string $default = ''): string
+    /**
+     * @return array<string, string>
+     */
+    protected function driverHeaders(): array
+    {
+        $apiKeyHeader = $this->apiKeyHeader();
+        $apiKey = $this->driverConfig('api_key');
+
+        if (null === $apiKeyHeader || '' === $apiKey) {
+            return [];
+        }
+
+        return [
+            $apiKeyHeader => $apiKey,
+        ];
+    }
+
+    protected function driverConfig(string $key, string $default = ''): string
     {
         return Config::string("services.{$this->driverName()}.{$key}", $default);
     }
 
     private function driverBaseUrl(): string
     {
-        return $this->serviceConfigString('base_url', $this->defaultBaseUrl());
+        return $this->driverConfig('base_url', $this->defaultBaseUrl());
     }
 }
