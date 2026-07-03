@@ -153,7 +153,7 @@ jobs:
           gh label create skip-changelog \
             --description "Exclude this PR from generated release notes" \
             --color "ededed" \
-            --force
+            --force || true
 
           body="$(cat <<BODY
           This PR updates CHANGELOG.md for $VERSION.
@@ -168,12 +168,26 @@ jobs:
           BODY
           )"
 
-          gh pr create \
+          if gh pr create \
             --base "$GITHUB_REF_NAME" \
             --head "changelog/$VERSION" \
             --title "Release $VERSION" \
             --body "$body" \
-            --label skip-changelog
+            --label skip-changelog; then
+            exit 0
+          fi
+
+          pr_url="https://github.com/${GITHUB_REPOSITORY}/compare/${GITHUB_REF_NAME}...changelog/${VERSION}?expand=1"
+
+          {
+            echo "## Pull request creation was blocked"
+            echo
+            echo "GitHub Actions is not permitted to create pull requests in this repository."
+            echo
+            echo "Open the release PR manually:"
+            echo
+            echo "$pr_url"
+          } >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
