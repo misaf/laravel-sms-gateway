@@ -234,6 +234,10 @@ composer test      # run Pest tests
 composer analyse   # run PHPStan/Larastan
 ```
 
+## Changelog
+
+Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+
 ## License
 
 MIT
