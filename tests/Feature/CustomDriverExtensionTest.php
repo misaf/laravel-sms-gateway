@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Client\Response;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
@@ -71,6 +72,14 @@ test('dispatches an event after an SMS gateway request receives a response', fun
     ]);
 
     SmsGateway::extend('eventful', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
+        /**
+         * @param array<string, mixed> $data
+         */
+        public function send(array $data): Response
+        {
+            return $this->request()->post('messages', $data);
+        }
+
         protected function driverName(): string
         {
             return 'eventful';
@@ -82,11 +91,10 @@ test('dispatches an event after an SMS gateway request receives a response', fun
         }
     });
 
-    SmsGateway::driver('eventful')->request()
-        ->post('messages', [
-            'message' => 'Hello from event test',
-            'to'      => '09123456789',
-        ]);
+    SmsGateway::driver('eventful')->send([
+        'message' => 'Hello from event test',
+        'to'      => '09123456789',
+    ]);
 
     Event::assertDispatched(function (SmsSent $event): bool {
         return 'eventful' === $event->driverName
@@ -108,6 +116,14 @@ test('prefers the base URL configured in services over the driver default', func
     ]);
 
     SmsGateway::extend('overrideable', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
+        /**
+         * @param array<string, mixed> $data
+         */
+        public function send(array $data): Response
+        {
+            return $this->request()->post('sms/send.json', $data);
+        }
+
         protected function driverName(): string
         {
             return 'overrideable';
@@ -124,7 +140,7 @@ test('prefers the base URL configured in services over the driver default', func
         }
     });
 
-    SmsGateway::driver()->request()->post('sms/send.json', [
+    SmsGateway::driver()->send([
         'receptor' => '09123456789',
         'message'  => 'Hello',
     ]);
@@ -132,5 +148,41 @@ test('prefers the base URL configured in services over the driver default', func
     Http::assertSent(function (Request $request): bool {
         return 'https://services-override.example.test/v1/sms/send.json' === $request->url()
             && $request->hasHeader('apikey', 'test-api-key');
+    });
+});
+
+test('can use a different HTTP method for send', function (): void {
+    Http::fake([
+        'https://send.example.test/v1/messages?message=Hello%20from%20send%20test&to=09123456789' => Http::response(['ok' => true], 200),
+    ]);
+
+    SmsGateway::extend('overridden-sendable', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
+        /**
+         * @param array<string, mixed> $data
+         */
+        public function send(array $data): Response
+        {
+            return $this->request()->get('messages', $data);
+        }
+
+        protected function driverName(): string
+        {
+            return 'overridden-sendable';
+        }
+
+        protected function defaultBaseUrl(): string
+        {
+            return 'https://send.example.test/v1/';
+        }
+    });
+
+    SmsGateway::driver('overridden-sendable')->send([
+        'message' => 'Hello from send test',
+        'to'      => '09123456789',
+    ]);
+
+    Http::assertSent(function (Request $request): bool {
+        return 'GET' === $request->method()
+            && 'https://send.example.test/v1/messages?message=Hello%20from%20send%20test&to=09123456789' === $request->url();
     });
 });
