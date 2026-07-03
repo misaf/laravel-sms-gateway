@@ -21,12 +21,12 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
     {
         $endpoint ??= $this->endpoint();
 
-        return $this->request()->post('' === $endpoint ? $this->gateway() : $endpoint, $data);
+        return $this->request()->post('' === $endpoint ? $this->driverBaseUrl() : $endpoint, $data);
     }
 
     final public function request(): PendingRequest
     {
-        $request = Http::baseUrl($this->gateway())
+        $request = Http::baseUrl($this->driverBaseUrl())
             ->timeout(Config::integer('sms_gateway.defaults.timeout'))
             ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'))
             ->withHeaders($this->headers());
@@ -49,7 +49,7 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
 
     abstract protected function driverName(): string;
 
-    abstract protected function defaultGateway(): string;
+    abstract protected function defaultBaseUrl(): string;
 
     /**
      * @return array<string, string>
@@ -94,8 +94,8 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
         return Config::string("services.{$this->driverName()}.{$key}", $default);
     }
 
-    private function gateway(): string
+    private function driverBaseUrl(): string
     {
-        return $this->serviceConfigString('gateway', $this->defaultGateway());
+        return $this->serviceConfigString('base_url', $this->defaultBaseUrl());
     }
 }
