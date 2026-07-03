@@ -12,7 +12,7 @@ interface SmsGatewayHandlerInterface
     /**
      * @param array<string, mixed> $data
      */
-    public function send(array $data, ?string $endpoint = null): Response;
+    public function send(array $data): Response;
 
     public function request(): PendingRequest;
 }

@@ -9,7 +9,6 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
@@ -18,19 +17,14 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
     /**
      * @param array<string, mixed> $data
      */
-    final public function send(array $data, ?string $endpoint = null): Response
-    {
-        $endpoint ??= $this->endpoint();
-
-        return $this->request()->post('' === $endpoint ? $this->gateway() : $endpoint, $data);
-    }
+    abstract public function send(array $data): Response;
 
     final public function request(): PendingRequest
     {
-        $request = Http::baseUrl($this->gateway())
+        $request = Http::baseUrl($this->driverBaseUrl())
             ->timeout(Config::integer('sms_gateway.defaults.timeout'))
             ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'))
-            ->withHeaders($this->headers());
+            ->withHeaders($this->driverHeaders());
 
         return $this->configureRequest($request)->afterResponse(function (Response $response, Request $request): Response {
             SmsSent::dispatch($this->driverName(), $request, $response);
@@ -39,43 +33,9 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
         });
     }
 
-    final public function endpoint(string $name = 'default'): string
-    {
-        $servicePath = "services.{$this->driverName()}.endpoints.{$name}";
-        $driverPath = "sms_gateway.drivers.{$this->driverName()}.endpoints.{$name}";
-        $default = $this->defaultEndpoints()[$name] ?? ('default' === $name ? '' : $name);
-
-        return Config::string($servicePath, fn(): string => Config::string($driverPath, $default));
-    }
-
     abstract protected function driverName(): string;
 
-    abstract protected function defaultGateway(): string;
-
-    /**
-     * @return array<string, string>
-     */
-    protected function defaultEndpoints(): array
-    {
-        return [];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function headers(): array
-    {
-        $apiKeyHeader = $this->apiKeyHeader();
-        $apiKey = $this->serviceConfigString('api_key');
-
-        if (null === $apiKeyHeader || '' === $apiKey) {
-            return [];
-        }
-
-        return [
-            $apiKeyHeader => $apiKey,
-        ];
-    }
+    abstract protected function defaultBaseUrl(): string;
 
     /**
      * Apply driver-specific options to the outgoing request.
@@ -91,19 +51,29 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
     }
 
     /**
-     * Resolves `services.{driver}.{key}`, falling back to the camelCase
-     * `sms_gateway.drivers.{driver}.{key}` entry, then the given default.
+     * @return array<string, string>
      */
-    protected function serviceConfigString(string $key, string $default = ''): string
+    protected function driverHeaders(): array
     {
-        $servicePath = "services.{$this->driverName()}.{$key}";
-        $driverPath = "sms_gateway.drivers.{$this->driverName()}." . Str::camel($key);
+        $apiKeyHeader = $this->apiKeyHeader();
+        $apiKey = $this->driverConfig('api_key');
 
-        return Config::string($servicePath, fn(): string => Config::string($driverPath, $default));
+        if (null === $apiKeyHeader || '' === $apiKey) {
+            return [];
+        }
+
+        return [
+            $apiKeyHeader => $apiKey,
+        ];
     }
 
-    private function gateway(): string
+    protected function driverConfig(string $key, string $default = ''): string
     {
-        return $this->serviceConfigString('gateway', $this->defaultGateway());
+        return Config::string("services.{$this->driverName()}.{$key}", $default);
+    }
+
+    private function driverBaseUrl(): string
+    {
+        return $this->driverConfig('base_url', $this->defaultBaseUrl());
     }
 }
