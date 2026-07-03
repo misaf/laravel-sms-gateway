@@ -100,29 +100,6 @@ SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key # Ghasedak API key
 
 Provider keys like `SMS_GATEWAY_GHASEDAK_APIKEY` are defined by each driver package — see that package's README (linked under [Driver Packages](#driver-packages)) for its environment variables.
 
-## Dependency Injection
-
-Inject `Misaf\LaravelSmsGateway\SmsGatewayManager`:
-
-```php
-use Misaf\LaravelSmsGateway\SmsGatewayManager;
-
-final class SendWelcomeSms
-{
-    public function __construct(private SmsGatewayManager $gateway)
-    {
-    }
-
-    public function handle(string $mobile): void
-    {
-        $this->gateway->driver()->send([
-            'message'  => 'Welcome',
-            'receptor' => $mobile,
-        ]);
-    }
-}
-```
-
 ## Events
 
 HTTP drivers dispatch `Misaf\LaravelSmsGateway\Events\SmsSent`.
@@ -229,14 +206,14 @@ Add the service provider to the driver package `composer.json`:
 }
 ```
 
-## Quality Checks
+## Development Checks
 
-Run before committing:
+Run the local checks before committing:
 
 ```bash
-vendor/bin/pint
-composer test
-composer analyse
+vendor/bin/pint    # format code
+composer test      # run Pest tests
+composer analyse   # run PHPStan/Larastan
 ```
 
 ## License
