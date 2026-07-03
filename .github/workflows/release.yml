@@ -1,6 +1,11 @@
 name: Release
 
 on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       action:
@@ -24,6 +29,11 @@ on:
         required: true
         default: false
         type: boolean
+      auto_merge:
+        description: Automatically merge the changelog PR after required checks pass
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: write
@@ -38,13 +48,14 @@ jobs:
   prepare:
     name: Prepare release PR
     runs-on: ubuntu-latest
-    if: ${{ inputs.action == 'prepare' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'prepare' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
@@ -146,9 +157,11 @@ jobs:
           git commit -m "Update changelog for $VERSION"
           git push --force-with-lease origin "$branch"
         env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
 
       - name: Create pull request
+        id: create-pr
         run: |
           gh label create skip-changelog \
             --description "Exclude this PR from generated release notes" \
@@ -168,12 +181,13 @@ jobs:
           BODY
           )"
 
-          if gh pr create \
+          if pr_url="$(gh pr create \
             --base "$GITHUB_REF_NAME" \
             --head "changelog/$VERSION" \
             --title "Release $VERSION" \
             --body "$body" \
-            --label skip-changelog; then
+            --label skip-changelog)"; then
+            echo "url=$pr_url" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -189,21 +203,45 @@ jobs:
             echo "$pr_url"
           } >> "$GITHUB_STEP_SUMMARY"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
           PREVIOUS_TAG: ${{ steps.previous-tag.outputs.value }}
           PRERELEASE: ${{ inputs.prerelease }}
 
+      - name: Enable auto-merge
+        if: ${{ inputs.auto_merge && steps.create-pr.outputs.url != '' }}
+        run: |
+          if gh pr merge --auto --merge "$PR_URL"; then
+            {
+              echo "## Auto-merge enabled"
+              echo
+              echo "$PR_URL will merge after required checks pass."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "## Auto-merge could not be enabled"
+            echo
+            echo "Enable repository auto-merge, or merge the PR manually after checks pass:"
+            echo
+            echo "$PR_URL"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ steps.create-pr.outputs.url }}
+
   publish:
     name: Publish release
     runs-on: ubuntu-latest
-    if: ${{ inputs.action == 'publish' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action == 'publish' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Validate version
         run: |
@@ -257,7 +295,7 @@ jobs:
 
           gh api "${args[@]}" > /tmp/release-notes.md
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
           PREVIOUS_TAG: ${{ steps.previous-tag.outputs.value }}
 
@@ -282,6 +320,106 @@ jobs:
 
           gh release create "${args[@]}"
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           VERSION: ${{ inputs.version }}
           PRERELEASE: ${{ inputs.prerelease }}
+
+  publish-after-merge:
+    name: Publish merged release PR
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'changelog/v') }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Resolve version
+        id: version
+        run: |
+          version="${HEAD_REF#changelog/}"
+          prerelease=false
+
+          if [[ "$version" == *-* ]]; then
+            prerelease=true
+          fi
+
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+
+      - name: Validate version
+        run: |
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Version must look like v1.0.0 or v1.0.0-beta.1"
+            exit 1
+          fi
+
+          if git rev-parse "$VERSION" >/dev/null 2>&1; then
+            echo "Tag $VERSION already exists"
+            exit 1
+          fi
+
+          release_version="${VERSION#v}"
+
+          if ! grep -q "^## $release_version - " CHANGELOG.md; then
+            echo "CHANGELOG.md does not contain an entry for $release_version"
+            exit 1
+          fi
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+
+      - name: Resolve previous tag
+        id: previous-tag
+        run: |
+          previous_tag="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          echo "value=$previous_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        run: |
+          args=(
+            -X POST
+            "repos/$GITHUB_REPOSITORY/releases/generate-notes"
+            -f "tag_name=$VERSION"
+            -f "target_commitish=$GITHUB_SHA"
+            -f "configuration_file_path=.github/release.yml"
+            --jq ".body"
+          )
+
+          if [[ -n "$PREVIOUS_TAG" ]]; then
+            args+=(-f "previous_tag_name=$PREVIOUS_TAG")
+          fi
+
+          gh api "${args[@]}" > /tmp/release-notes.md
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.value }}
+          PREVIOUS_TAG: ${{ steps.previous-tag.outputs.value }}
+
+      - name: Create and push tag
+        run: |
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+
+      - name: Create GitHub release
+        run: |
+          args=(
+            "$VERSION"
+            --title "$VERSION"
+            --notes-file /tmp/release-notes.md
+          )
+
+          if [[ "$PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+
+          gh release create "${args[@]}"
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.value }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
