@@ -134,7 +134,7 @@ jobs:
 
       - name: Create release branch
         run: |
-          branch="release/${VERSION}"
+          branch="changelog/${VERSION}"
           git switch -c "$branch"
           git add CHANGELOG.md
 
@@ -170,7 +170,7 @@ jobs:
 
           gh pr create \
             --base "$GITHUB_REF_NAME" \
-            --head "release/$VERSION" \
+            --head "changelog/$VERSION" \
             --title "Release $VERSION" \
             --body "$body" \
             --label skip-changelog
