@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('SMS_GATEWAY_DRIVER', ''),
+    'default' => env('SMS_GATEWAY_DRIVER'),
 
     /*
     |--------------------------------------------------------------------------
@@ -28,18 +28,4 @@ return [
         'timeout'         => env('SMS_GATEWAY_TIMEOUT', 10),
         'connect_timeout' => env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
     ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | SMS Gateway Drivers
-    |--------------------------------------------------------------------------
-    |
-    | Per-driver credentials and gateways are configured in config/services.php,
-    | following Laravel's convention for third-party service credentials. Values
-    | set there take precedence; anything defined here acts as a shared default.
-    |
-    */
-
-    'drivers' => [],
-
 ];
