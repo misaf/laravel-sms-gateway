@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Misaf\LaravelSmsGateway;
 
 use Composer\InstalledVersions;
-use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Foundation\Console\AboutCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -21,15 +20,19 @@ final class SmsGatewayServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->app->singleton('sms-gateway', fn(Application $app): SmsGatewayManager => new SmsGatewayManager($app));
-        $this->app->alias('sms-gateway', SmsGatewayManager::class);
+        $this->app->singleton(SmsGatewayManager::class);
+        $this->app->alias(SmsGatewayManager::class, 'sms-gateway');
     }
 
     public function packageBooted(): void
     {
+        if ( ! $this->app->runningInConsole()) {
+            return;
+        }
+
         AboutCommand::add('Laravel SMS Gateway', fn(): array => [
             'Version'        => InstalledVersions::getPrettyVersion('misaf/laravel-sms-gateway') ?? 'Unknown',
-            'Default Driver' => config('sms_gateway.default') ?: 'Not configured',
+            'Default Driver' => $this->app->make(SmsGatewayManager::class)->getDefaultDriver() ?: 'Not configured',
         ]);
     }
 }

@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Facade\SmsGateway;
-use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 use Misaf\LaravelSmsGateway\SmsGatewayDriver;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\CustomSmsGatewayDriver;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\NonGatewayDriver;
@@ -41,7 +40,7 @@ describe('driver resolution', function (): void {
 
 describe('CustomSmsGatewayDriver', function (): void {
     beforeEach(function (): void {
-        SmsGateway::extend('custom', function (Application $app): SmsGatewayHandlerInterface {
+        SmsGateway::extend('custom', function (Application $app): SmsGatewayDriver {
             return $app->make(CustomSmsGatewayDriver::class);
         });
     });
@@ -125,18 +124,13 @@ describe('SmsGatewayDriver customization', function (): void {
             return Http::response(['ok' => true], 200);
         });
 
-        SmsGateway::extend('configured', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
+        SmsGateway::extend('configured', fn(): SmsGatewayDriver => new class () extends SmsGatewayDriver {
             /**
              * @param array<string, mixed> $data
              */
             public function send(array $data): Response
             {
                 return $this->request()->post('messages', $data);
-            }
-
-            protected function driverName(): string
-            {
-                return 'configured';
             }
 
             protected function defaultBaseUrl(): string
@@ -166,18 +160,13 @@ describe('SmsGatewayDriver customization', function (): void {
             'https://send.example.test/v1/messages?message=Hello%20from%20send%20test&to=09123456789' => Http::response(['ok' => true], 200),
         ]);
 
-        SmsGateway::extend('overridden-sendable', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
+        SmsGateway::extend('overridden-sendable', fn(): SmsGatewayDriver => new class () extends SmsGatewayDriver {
             /**
              * @param array<string, mixed> $data
              */
             public function send(array $data): Response
             {
                 return $this->request()->get('messages', $data);
-            }
-
-            protected function driverName(): string
-            {
-                return 'overridden-sendable';
             }
 
             protected function defaultBaseUrl(): string
@@ -206,18 +195,13 @@ describe('SmsGatewayDriver customization', function (): void {
             'https://services-override.example.test/v1/sms/send.json' => Http::response(['ok' => true], 200),
         ]);
 
-        SmsGateway::extend('overrideable', fn(): SmsGatewayHandlerInterface => new class () extends SmsGatewayDriver {
+        SmsGateway::extend('overrideable', fn(): SmsGatewayDriver => new class () extends SmsGatewayDriver {
             /**
              * @param array<string, mixed> $data
              */
             public function send(array $data): Response
             {
                 return $this->request()->post('sms/send.json', $data);
-            }
-
-            protected function driverName(): string
-            {
-                return 'overrideable';
             }
 
             protected function defaultBaseUrl(): string
@@ -241,4 +225,67 @@ describe('SmsGatewayDriver customization', function (): void {
                 && $request->hasHeader('apikey', 'test-api-key');
         });
     });
+});
+
+describe('driver name resolution', function (): void {
+    test('registers the same driver class under multiple names with separate config', function (): void {
+        config()->set('services.custom-a.base_url', 'https://a.example.test');
+        config()->set('services.custom-b.base_url', 'https://b.example.test');
+
+        Http::fake([
+            'https://a.example.test/messages' => Http::response(['ok' => true], 200),
+            'https://b.example.test/messages' => Http::response(['ok' => true], 200),
+        ]);
+
+        SmsGateway::extend('custom-a', fn(Application $app): SmsGatewayDriver => $app->make(CustomSmsGatewayDriver::class));
+        SmsGateway::extend('custom-b', fn(Application $app): SmsGatewayDriver => $app->make(CustomSmsGatewayDriver::class));
+
+        SmsGateway::driver('custom-a')->send(['message' => 'A']);
+        SmsGateway::driver('custom-b')->send(['message' => 'B']);
+
+        Http::assertSent(fn(Request $request): bool => 'https://a.example.test/messages' === $request->url());
+        Http::assertSent(fn(Request $request): bool => 'https://b.example.test/messages' === $request->url());
+    });
+
+    test('prefers an overridden driverName() over the registration key', function (): void {
+        config()->set('services.legacy.base_url', 'https://legacy.example.test/');
+
+        Event::fake([
+            SmsSent::class,
+        ]);
+
+        Http::fake([
+            'https://legacy.example.test/messages' => Http::response(['ok' => true], 200),
+        ]);
+
+        SmsGateway::extend('modern', fn(): SmsGatewayDriver => new class () extends SmsGatewayDriver {
+            /**
+             * @param array<string, mixed> $data
+             */
+            public function send(array $data): Response
+            {
+                return $this->request()->post('messages', $data);
+            }
+
+            protected function driverName(): string
+            {
+                return 'legacy';
+            }
+
+            protected function defaultBaseUrl(): string
+            {
+                return 'https://modern-default.example.test/';
+            }
+        });
+
+        SmsGateway::driver('modern')->send(['message' => 'Hello']);
+
+        Http::assertSent(fn(Request $request): bool => 'https://legacy.example.test/messages' === $request->url());
+
+        Event::assertDispatched(fn(SmsSent $event): bool => 'legacy' === $event->driverName);
+    });
+
+    test('throws when a driver is used without being resolved through the manager', function (): void {
+        (new CustomSmsGatewayDriver())->send(['message' => 'Hello']);
+    })->throws(LogicException::class);
 });

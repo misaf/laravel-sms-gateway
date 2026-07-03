@@ -9,11 +9,13 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use LogicException;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
-use Misaf\LaravelSmsGateway\Interfaces\SmsGatewayHandlerInterface;
 
-abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
+abstract class SmsGatewayDriver
 {
+    private ?string $driverName = null;
+
     /**
      * @param array<string, mixed> $data
      */
@@ -23,8 +25,14 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
     {
         $request = Http::baseUrl($this->driverBaseUrl())
             ->timeout(Config::integer('sms_gateway.defaults.timeout'))
-            ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'))
-            ->withHeaders($this->driverHeaders());
+            ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'));
+
+        $apiKeyHeader = $this->apiKeyHeader();
+        $apiKey = $this->driverConfig('api_key');
+
+        if (null !== $apiKeyHeader && '' !== $apiKey) {
+            $request = $request->withHeader($apiKeyHeader, $apiKey);
+        }
 
         return $this->configureRequest($request)->afterResponse(function (Response $response, Request $request): Response {
             SmsSent::dispatch($this->driverName(), $request, $response);
@@ -33,9 +41,24 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
         });
     }
 
-    abstract protected function driverName(): string;
+    final public function setDriverName(string $driverName): void
+    {
+        $this->driverName = $driverName;
+    }
 
     abstract protected function defaultBaseUrl(): string;
+
+    /**
+     * The driver name, set from the registration key by the manager unless overridden.
+     */
+    protected function driverName(): string
+    {
+        if (null === $this->driverName) {
+            throw new LogicException(sprintf('Driver [%s] has no name. Resolve it through the SMS gateway manager or override driverName().', static::class));
+        }
+
+        return $this->driverName;
+    }
 
     /**
      * Apply driver-specific options to the outgoing request.
@@ -48,23 +71,6 @@ abstract class SmsGatewayDriver implements SmsGatewayHandlerInterface
     protected function apiKeyHeader(): ?string
     {
         return null;
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    protected function driverHeaders(): array
-    {
-        $apiKeyHeader = $this->apiKeyHeader();
-        $apiKey = $this->driverConfig('api_key');
-
-        if (null === $apiKeyHeader || '' === $apiKey) {
-            return [];
-        }
-
-        return [
-            $apiKeyHeader => $apiKey,
-        ];
     }
 
     protected function driverConfig(string $key, string $default = ''): string
