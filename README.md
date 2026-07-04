@@ -197,14 +197,11 @@ final class AppServiceProvider extends ServiceProvider
 }
 ```
 
-## Development Checks
-
-Run the local checks before committing:
+## Testing
 
 ```bash
-vendor/bin/pint    # format code
-composer test      # run Pest tests
-composer analyse   # run PHPStan/Larastan
+composer test
+composer analyse
 ```
 
 ## Changelog
