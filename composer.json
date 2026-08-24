@@ -36,7 +36,7 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.24.1",
-        "guzzlehttp/guzzle": "^7.10",
+        "guzzlehttp/guzzle": "^7.10 || ^8.0",
         "larastan/larastan": "^3.9.2",
         "laravel/boost": "^2.0.6",
         "laravel/pint": "^1.29",
