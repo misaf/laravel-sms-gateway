@@ -4,7 +4,7 @@ A simple driver-based SMS gateway manager for Laravel.
 
 ## Features
 
-- Separate packages for each provider.
+- Separate, independently installable packages for each provider.
 - Switch drivers per request.
 - Laravel HTTP client access.
 - SMS sent events with request and response data.
@@ -12,7 +12,7 @@ A simple driver-based SMS gateway manager for Laravel.
 
 ## Requirements
 
-- PHP 8.3+
+- PHP 8.4+
 - Laravel 13+
 
 ## Installation
@@ -34,6 +34,9 @@ Publish the config file:
 ```bash
 php artisan vendor:publish --tag=sms-gateway-config
 ```
+
+Each driver package publishes its own config file the same way, for example
+`--tag=sms-gateway-ghasedak-config`.
 
 ## Driver Packages
 
@@ -62,28 +65,23 @@ Install the Ghasedak driver package:
 composer require misaf/laravel-sms-gateway-ghasedak
 ```
 
-Set the default driver in `.env`:
+Set the default driver and its credentials in `.env`:
 
 ```env
 SMS_GATEWAY_DRIVER=ghasedak # Default driver
-SMS_GATEWAY_GHASEDAK_APIKEY=your-api-key # Ghasedak API key
+SMS_GATEWAY_GHASEDAK_API_KEY=your-api-key # Ghasedak API key
 ```
 
-Add the matching service credentials in `config/services.php`:
-
-```php
-'ghasedak' => [
-    'api_key' => env('SMS_GATEWAY_GHASEDAK_APIKEY'),
-],
-```
+Each driver package ships its own config file — `config/laravel-sms-gateway-ghasedak.php`
+here — so no changes to `config/services.php` are needed.
 
 Send through the default driver:
 
 ```php
-use Misaf\LaravelSmsGateway\Facade\SmsGateway;
+use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
 $response = SmsGateway::driver()->send([
-    'message'  => 'Hello',
+    'message' => 'Hello',
     'receptor' => '09123456789',
 ]);
 ```
@@ -95,6 +93,15 @@ See the original provider documentation for available fields.
 Set `SMS_GATEWAY_DRIVER` in your application's `.env` file to choose the default driver.
 
 Provider environment keys are defined by each driver package — see that package's README (linked under [Driver Packages](#driver-packages)) for its variables.
+
+The HTTP timeouts shared by every driver can be tuned in seconds:
+
+```env
+SMS_GATEWAY_TIMEOUT=10 # Request timeout
+SMS_GATEWAY_CONNECT_TIMEOUT=5 # Connection timeout
+```
+
+Individual drivers may override these in `configureRequest()`.
 
 ### Switching Drivers
 
@@ -145,9 +152,11 @@ Event properties:
 
 ## Custom Drivers
 
-Custom drivers should extend `SmsGatewayDriver`, implement `send()`, and use `configureRequest()` for driver-specific HTTP client options.
+Custom drivers should extend `SmsGatewayDriver` (which implements the
+`Misaf\LaravelSmsGateway\Contracts\SmsGateway` contract), implement `send()`, and use
+`configureRequest()` for driver-specific HTTP client options.
 
-The driver name is taken from the `extend()` registration key; it selects the `services.{name}` config section and labels `SmsSent` events. Override `driverName()` only when those should use a different name.
+The driver name is taken from the `extend()` registration key; it selects the `laravel-sms-gateway-{name}` config file and labels `SmsSent` events. Override `driverName()` to change both, or `configKey()` to point only the config lookup elsewhere.
 
 ```php
 namespace App\SmsGateways;
@@ -184,7 +193,7 @@ Register it from a service provider:
 use App\SmsGateways\CustomDriver;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
-use Misaf\LaravelSmsGateway\Facade\SmsGateway;
+use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -197,11 +206,36 @@ final class AppServiceProvider extends ServiceProvider
 }
 ```
 
+## Repository Layout
+
+This repository is a monorepo. The core package lives at the root and every
+first-party driver lives in `src/Drivers/laravel-sms-gateway-<driver>`, split
+out to its own read-only repository on release.
+
+```
+config/laravel-sms-gateway.php
+src/
+    Contracts/SmsGateway.php
+    Drivers/
+        NullSmsGatewayDriver.php
+        laravel-sms-gateway-<driver>/     # a full composer package
+    Events/SmsSent.php
+    Facades/SmsGateway.php
+    Providers/SmsGatewayServiceProvider.php
+    SmsGatewayDriver.php
+    SmsGatewayManager.php
+tests/
+```
+
 ## Testing
+
+Run everything from the monorepo root — the test suite, static analysis, and
+code style cover the core package and every driver package at once:
 
 ```bash
 composer test
 composer analyse
+composer format
 ```
 
 ## Changelog
