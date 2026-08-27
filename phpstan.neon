@@ -1,11 +1,30 @@
-includes:
-    - vendor/larastan/larastan/extension.neon
-    - vendor/nesbot/carbon/extension.neon
-
 parameters:
 
     paths:
-        - src/
+        - src
+
+    # Driver package tests live inside src/ by monorepo layout; the analysed
+    # surface is production code only, matching each driver package's own
+    # phpstan.neon.
+    excludePaths:
+        - src/Drivers/laravel-sms-gateway-ghasedak/tests
+        - src/Drivers/laravel-sms-gateway-ippanel/tests
+        - src/Drivers/laravel-sms-gateway-kavenegar/tests
+        - src/Drivers/laravel-sms-gateway-magfa/tests
+        - src/Drivers/laravel-sms-gateway-melipayamak/tests
+        - src/Drivers/laravel-sms-gateway-messagebird/tests
+        - src/Drivers/laravel-sms-gateway-plivo/tests
+        - src/Drivers/laravel-sms-gateway-smsir/tests
+        - src/Drivers/laravel-sms-gateway-sunway/tests
+        - src/Drivers/laravel-sms-gateway-textlocal/tests
+        - src/Drivers/laravel-sms-gateway-twilio/tests
+        - src/Drivers/laravel-sms-gateway-vonage/tests
+
+    # Each driver package ships its own config file; without this, larastan
+    # only recognises the root config/ directory and flags their env() calls.
+    configDirectories:
+        - config
+        - src/Drivers/*/config
 
     # Level 10 is the highest level
     level: 10
