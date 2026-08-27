@@ -10,9 +10,10 @@ use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use LogicException;
+use Misaf\LaravelSmsGateway\Contracts\SmsGateway;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 
-abstract class SmsGatewayDriver
+abstract class SmsGatewayDriver implements SmsGateway
 {
     private ?string $driverName = null;
 
@@ -24,8 +25,8 @@ abstract class SmsGatewayDriver
     final public function request(): PendingRequest
     {
         $request = Http::baseUrl($this->driverBaseUrl())
-            ->timeout(Config::integer('sms_gateway.defaults.timeout'))
-            ->connectTimeout(Config::integer('sms_gateway.defaults.connect_timeout'));
+            ->timeout(Config::integer('laravel-sms-gateway.defaults.timeout'))
+            ->connectTimeout(Config::integer('laravel-sms-gateway.defaults.connect_timeout'));
 
         $apiKeyHeader = $this->apiKeyHeader();
         $apiKey = $this->driverConfig('api_key');
@@ -73,9 +74,24 @@ abstract class SmsGatewayDriver
         return null;
     }
 
+    /**
+     * The config namespace this driver reads its credentials from. Driver
+     * packages ship a config file named after the package itself.
+     */
+    protected function configKey(): string
+    {
+        return 'laravel-sms-gateway-' . $this->driverName();
+    }
+
+    /**
+     * Read a credential from this driver's config file. Unset keys resolve to
+     * null in the published config file, so treat null and empty alike.
+     */
     protected function driverConfig(string $key, string $default = ''): string
     {
-        return Config::string("services.{$this->driverName()}.{$key}", $default);
+        $value = Config::get("{$this->configKey()}.{$key}");
+
+        return is_string($value) && '' !== $value ? $value : $default;
     }
 
     private function driverBaseUrl(): string

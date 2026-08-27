@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+
     /*
     |--------------------------------------------------------------------------
     | Default SMS Gateway Driver
@@ -10,10 +11,11 @@ return [
     |
     | This option sets the default SMS gateway driver for requests. Install
     | the matching driver package or register a custom driver with extend().
+    | The "null" driver ships with this package and sends nothing.
     |
     */
 
-    'default' => env('SMS_GATEWAY_DRIVER'),
+    'default' => env('SMS_GATEWAY_DRIVER', 'null'),
 
     /*
     |--------------------------------------------------------------------------
@@ -25,7 +27,8 @@ return [
     */
 
     'defaults' => [
-        'timeout'         => env('SMS_GATEWAY_TIMEOUT', 10),
-        'connect_timeout' => env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
+        'timeout'         => (int) env('SMS_GATEWAY_TIMEOUT', 10),
+        'connect_timeout' => (int) env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
     ],
+
 ];
