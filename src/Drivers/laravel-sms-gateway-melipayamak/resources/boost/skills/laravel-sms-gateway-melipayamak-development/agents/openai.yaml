@@ -1,0 +1,4 @@
+name: laravel-sms-gateway-melipayamak-development
+description: Guidance for developing the misaf/laravel-sms-gateway-melipayamak package, the Melipayamak driver for Laravel SMS Gateway.
+instructions: |
+  Read resources/boost/skills/laravel-sms-gateway-melipayamak-development/SKILL.md before changing this package.

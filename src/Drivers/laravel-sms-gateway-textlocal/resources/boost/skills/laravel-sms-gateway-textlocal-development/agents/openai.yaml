@@ -1,0 +1,4 @@
+name: laravel-sms-gateway-textlocal-development
+description: Guidance for developing the misaf/laravel-sms-gateway-textlocal package, the Textlocal driver for Laravel SMS Gateway.
+instructions: |
+  Read resources/boost/skills/laravel-sms-gateway-textlocal-development/SKILL.md before changing this package.

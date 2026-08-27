@@ -1,0 +1,4 @@
+name: laravel-sms-gateway-twilio-development
+description: Guidance for developing the misaf/laravel-sms-gateway-twilio package, the Twilio driver for Laravel SMS Gateway.
+instructions: |
+  Read resources/boost/skills/laravel-sms-gateway-twilio-development/SKILL.md before changing this package.

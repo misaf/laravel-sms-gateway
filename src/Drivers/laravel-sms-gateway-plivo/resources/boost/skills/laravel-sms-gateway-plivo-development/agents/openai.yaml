@@ -1,0 +1,4 @@
+name: laravel-sms-gateway-plivo-development
+description: Guidance for developing the misaf/laravel-sms-gateway-plivo package, the Plivo driver for Laravel SMS Gateway.
+instructions: |
+  Read resources/boost/skills/laravel-sms-gateway-plivo-development/SKILL.md before changing this package.
