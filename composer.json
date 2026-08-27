@@ -1,8 +1,8 @@
 {
     "name": "misaf/laravel-sms-gateway",
     "description": "Driver-based SMS gateway manager for Laravel.",
-    "type": "library",
     "license": "MIT",
+    "type": "library",
     "keywords": [
         "laravel",
         "laravel-package",
@@ -15,11 +15,6 @@
         "notification",
         "gateway"
     ],
-    "homepage": "https://github.com/misaf/laravel-sms-gateway",
-    "support": {
-        "issues": "https://github.com/misaf/laravel-sms-gateway/issues",
-        "source": "https://github.com/misaf/laravel-sms-gateway"
-    },
     "authors": [
         {
             "name": "Ehsan Mahmoodi",
@@ -27,33 +22,50 @@
             "role": "Developer"
         }
     ],
+    "homepage": "https://github.com/misaf/laravel-sms-gateway",
+    "support": {
+        "issues": "https://github.com/misaf/laravel-sms-gateway/issues",
+        "source": "https://github.com/misaf/laravel-sms-gateway"
+    },
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
+        "guzzlehttp/guzzle": "^7.10",
         "illuminate/contracts": "^13.0",
         "illuminate/http": "^13.0",
         "illuminate/support": "^13.0",
-        "spatie/laravel-package-tools": "^1.92"
+        "spatie/laravel-package-tools": "^1.93"
     },
     "require-dev": {
-        "fakerphp/faker": "^1.24.1",
-        "guzzlehttp/guzzle": "^7.10",
-        "larastan/larastan": "^3.9.2",
-        "laravel/boost": "^2.0.6",
-        "laravel/pint": "^1.29",
-        "mockery/mockery": "^1.6.12",
-        "nunomaduro/collision": "^8.8.3",
-        "orchestra/testbench": "^11.0",
-        "pestphp/pest": "^4.3.2",
-        "pestphp/pest-plugin-arch": "^4.0",
-        "pestphp/pest-plugin-laravel": "^4.0",
-        "pestphp/pest-plugin-profanity": "^4.2.1",
-        "pestphp/pest-plugin-type-coverage": "^4.0.3"
+        "larastan/larastan": "^3.10",
+        "laravel/boost": "^2.5",
+        "laravel/pint": "^1.3",
+        "mockery/mockery": "^1.6",
+        "monorepo-php/monorepo": "^12.7",
+        "nunomaduro/collision": "^8.9",
+        "orchestra/testbench": "^11.1",
+        "pestphp/pest": "^5.1",
+        "pestphp/pest-plugin-arch": "^5.0",
+        "pestphp/pest-plugin-laravel": "^5.0",
+        "pestphp/pest-plugin-profanity": "^5.0",
+        "pestphp/pest-plugin-type-coverage": "^5.0",
+        "phpstan/extension-installer": "^1.4"
     },
-    "scripts": {
-        "analyse": "vendor/bin/phpstan analyse",
-        "test": "vendor/bin/pest",
-        "test-coverage": "vendor/bin/pest --coverage"
+    "suggest": {
+        "misaf/laravel-sms-gateway-ghasedak": "Adds the \"ghasedak\" driver, backed by the Ghasedak API",
+        "misaf/laravel-sms-gateway-ippanel": "Adds the \"ippanel\" driver, backed by the IPPanel API",
+        "misaf/laravel-sms-gateway-kavenegar": "Adds the \"kavenegar\" driver, backed by the Kavenegar API",
+        "misaf/laravel-sms-gateway-magfa": "Adds the \"magfa\" driver, backed by the Magfa API",
+        "misaf/laravel-sms-gateway-melipayamak": "Adds the \"melipayamak\" driver, backed by the Melipayamak API",
+        "misaf/laravel-sms-gateway-messagebird": "Adds the \"messagebird\" driver, backed by the MessageBird API",
+        "misaf/laravel-sms-gateway-plivo": "Adds the \"plivo\" driver, backed by the Plivo API",
+        "misaf/laravel-sms-gateway-smsir": "Adds the \"smsir\" driver, backed by the SMS.ir API",
+        "misaf/laravel-sms-gateway-sunway": "Adds the \"sunway\" driver, backed by the Sunway API",
+        "misaf/laravel-sms-gateway-textlocal": "Adds the \"textlocal\" driver, backed by the Textlocal API",
+        "misaf/laravel-sms-gateway-twilio": "Adds the \"twilio\" driver, backed by the Twilio API",
+        "misaf/laravel-sms-gateway-vonage": "Adds the \"vonage\" driver, backed by the Vonage API"
     },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "autoload": {
         "psr-4": {
             "Misaf\\LaravelSmsGateway\\": "src/"
@@ -61,25 +73,43 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Misaf\\LaravelSmsGateway\\Tests\\": "tests/"
+            "Misaf\\LaravelSmsGateway\\Tests\\": "tests/",
+            "Misaf\\LaravelSmsGatewayGhasedak\\": "src/Drivers/laravel-sms-gateway-ghasedak/src/",
+            "Misaf\\LaravelSmsGatewayIppanel\\": "src/Drivers/laravel-sms-gateway-ippanel/src/",
+            "Misaf\\LaravelSmsGatewayKavenegar\\": "src/Drivers/laravel-sms-gateway-kavenegar/src/",
+            "Misaf\\LaravelSmsGatewayMagfa\\": "src/Drivers/laravel-sms-gateway-magfa/src/",
+            "Misaf\\LaravelSmsGatewayMelipayamak\\": "src/Drivers/laravel-sms-gateway-melipayamak/src/",
+            "Misaf\\LaravelSmsGatewayMessageBird\\": "src/Drivers/laravel-sms-gateway-messagebird/src/",
+            "Misaf\\LaravelSmsGatewayPlivo\\": "src/Drivers/laravel-sms-gateway-plivo/src/",
+            "Misaf\\LaravelSmsGatewaySmsIr\\": "src/Drivers/laravel-sms-gateway-smsir/src/",
+            "Misaf\\LaravelSmsGatewaySunway\\": "src/Drivers/laravel-sms-gateway-sunway/src/",
+            "Misaf\\LaravelSmsGatewayTextlocal\\": "src/Drivers/laravel-sms-gateway-textlocal/src/",
+            "Misaf\\LaravelSmsGatewayTwilio\\": "src/Drivers/laravel-sms-gateway-twilio/src/",
+            "Misaf\\LaravelSmsGatewayVonage\\": "src/Drivers/laravel-sms-gateway-vonage/src/"
         }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true,
+            "phpstan/extension-installer": true
+        },
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Misaf\\LaravelSmsGateway\\SmsGatewayServiceProvider"
+                "Misaf\\LaravelSmsGateway\\Providers\\SmsGatewayServiceProvider"
             ]
         }
     },
-    "config": {
-        "optimize-autoloader": true,
-        "preferred-install": "dist",
-        "sort-packages": true,
-        "allow-plugins": {
-            "pestphp/pest-plugin": true,
-            "php-http/discovery": true
-        }
+    "scripts": {
+        "analyse": "vendor/bin/phpstan analyse",
+        "format": "vendor/bin/pint",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage"
     },
-    "minimum-stability": "stable",
-    "prefer-stable": true
+    "$schema": "https://getcomposer.org/schema.json"
 }
