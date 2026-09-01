@@ -14,12 +14,15 @@ final class MagfaDriver extends SmsGatewayDriver
         string $baseUrl,
         private readonly string $username,
         private readonly string $password,
-        int $serverTimeout = 5,
-        int $clientTimeout = 6,
-        int $retryTimes = 2,
-        int $retrySleepMilliseconds = 100,
+        int $serverTimeout,
+        int $clientTimeout,
+        int $retryTimes,
+        int $retrySleepMilliseconds,
     ) {
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+
+        self::requireConfigured($username, 'Magfa username');
+        self::requireConfigured($password, 'Magfa password');
     }
 
     protected function name(): string

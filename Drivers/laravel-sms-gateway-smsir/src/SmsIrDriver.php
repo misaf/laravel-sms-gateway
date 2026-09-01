@@ -13,12 +13,14 @@ final class SmsIrDriver extends SmsGatewayDriver
     public function __construct(
         string $baseUrl,
         private readonly string $apiKey,
-        int $serverTimeout = 5,
-        int $clientTimeout = 6,
-        int $retryTimes = 2,
-        int $retrySleepMilliseconds = 100,
+        int $serverTimeout,
+        int $clientTimeout,
+        int $retryTimes,
+        int $retrySleepMilliseconds,
     ) {
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+
+        self::requireConfigured($apiKey, 'SMS.ir API key');
     }
 
     protected function name(): string

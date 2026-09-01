@@ -14,12 +14,15 @@ final class VonageDriver extends SmsGatewayDriver
         string $baseUrl,
         private readonly string $apiKey,
         private readonly string $apiSecret,
-        int $serverTimeout = 5,
-        int $clientTimeout = 6,
-        int $retryTimes = 2,
-        int $retrySleepMilliseconds = 100,
+        int $serverTimeout,
+        int $clientTimeout,
+        int $retryTimes,
+        int $retrySleepMilliseconds,
     ) {
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+
+        self::requireConfigured($apiKey, 'Vonage API key');
+        self::requireConfigured($apiSecret, 'Vonage API secret');
     }
 
     protected function name(): string

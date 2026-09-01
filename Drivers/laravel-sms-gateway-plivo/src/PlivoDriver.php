@@ -14,12 +14,15 @@ final class PlivoDriver extends SmsGatewayDriver
         string $baseUrl,
         private readonly string $authId,
         private readonly string $authToken,
-        int $serverTimeout = 5,
-        int $clientTimeout = 6,
-        int $retryTimes = 2,
-        int $retrySleepMilliseconds = 100,
+        int $serverTimeout,
+        int $clientTimeout,
+        int $retryTimes,
+        int $retrySleepMilliseconds,
     ) {
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+
+        self::requireConfigured($authId, 'Plivo auth ID');
+        self::requireConfigured($authToken, 'Plivo auth token');
     }
 
     protected function name(): string
@@ -32,8 +35,7 @@ final class PlivoDriver extends SmsGatewayDriver
      */
     protected function sendRequest(array $data): Response
     {
-        // Plivo scopes every endpoint under the account, so the auth ID belongs
-        // to the path rather than to the configurable base URL.
+        // Plivo scopes every endpoint under the account, so the auth ID belongs to the path.
         return $this->request()->post($this->authId . '/Message/', $data);
     }
 

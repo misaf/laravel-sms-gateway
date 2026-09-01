@@ -14,12 +14,15 @@ final class TwilioDriver extends SmsGatewayDriver
         string $baseUrl,
         private readonly string $accountSid,
         private readonly string $authToken,
-        int $serverTimeout = 5,
-        int $clientTimeout = 6,
-        int $retryTimes = 2,
-        int $retrySleepMilliseconds = 100,
+        int $serverTimeout,
+        int $clientTimeout,
+        int $retryTimes,
+        int $retrySleepMilliseconds,
     ) {
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+
+        self::requireConfigured($accountSid, 'Twilio account SID');
+        self::requireConfigured($authToken, 'Twilio auth token');
     }
 
     protected function name(): string
@@ -32,8 +35,7 @@ final class TwilioDriver extends SmsGatewayDriver
      */
     protected function sendRequest(array $data): Response
     {
-        // Twilio scopes every endpoint under the account, so the SID belongs to
-        // the path rather than to the configurable base URL.
+        // Twilio scopes every endpoint under the account, so the SID belongs to the path.
         return $this->request()->post($this->accountSid . '/Messages.json', $data);
     }
 
