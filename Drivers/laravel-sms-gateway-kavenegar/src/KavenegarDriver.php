@@ -16,6 +16,8 @@ use Throwable;
 
 final class KavenegarDriver implements SmsGateway
 {
+    private const string DEFAULT_BASE_URL = 'https://api.kavenegar.com/v1/';
+
     public function __construct(
         private readonly string $apiKey = '',
         private readonly string $baseUrl = '',
@@ -35,7 +37,7 @@ final class KavenegarDriver implements SmsGateway
 
     public function request(): PendingRequest
     {
-        return Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : "https://api.kavenegar.com/v1/{$this->apiKey}/")
+        return Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : self::DEFAULT_BASE_URL . $this->apiKey . '/')
             ->connectTimeout($this->serverTimeout)
             ->timeout($this->clientTimeout)
             ->retry(

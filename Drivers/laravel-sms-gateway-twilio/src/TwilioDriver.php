@@ -16,6 +16,8 @@ use Throwable;
 
 final class TwilioDriver implements SmsGateway
 {
+    private const string DEFAULT_BASE_URL = 'https://api.twilio.com/2010-04-01/Accounts/';
+
     public function __construct(
         private readonly string $accountSid = '',
         private readonly string $authToken = '',
@@ -36,7 +38,7 @@ final class TwilioDriver implements SmsGateway
 
     public function request(): PendingRequest
     {
-        return Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : "https://api.twilio.com/2010-04-01/Accounts/{$this->accountSid}/")
+        return Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : self::DEFAULT_BASE_URL . $this->accountSid . '/')
             ->connectTimeout($this->serverTimeout)
             ->timeout($this->clientTimeout)
             ->retry(
