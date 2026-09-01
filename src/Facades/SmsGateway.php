@@ -9,7 +9,6 @@ use Misaf\LaravelSmsGateway\SmsGatewayManager;
 
 /**
  * @method static \Misaf\LaravelSmsGateway\Contracts\SmsGateway driver(string|null $driver = null)
- * @method static \Misaf\LaravelSmsGateway\Contracts\SmsGateway gateway(string|null $driver = null)
  * @method static SmsGatewayManager extend(string $driver, \Closure $callback)
  * @method static string getDefaultDriver()
  * @method static \Illuminate\Http\Client\Response send(array<string, mixed> $data)
@@ -20,6 +19,6 @@ final class SmsGateway extends Facade
 {
     protected static function getFacadeAccessor(): string
     {
-        return SmsGatewayManager::class;
+        return 'sms-gateway';
     }
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Misaf\LaravelSmsGateway\Providers;
 
 use Composer\InstalledVersions;
+use Illuminate\Contracts\Container\Container as Application;
 use Illuminate\Foundation\Console\AboutCommand;
-use Misaf\LaravelSmsGateway\Contracts\SmsGateway;
 use Misaf\LaravelSmsGateway\SmsGatewayManager;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
@@ -18,20 +18,22 @@ final class SmsGatewayServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-sms-gateway')
-            ->hasConfigFile('laravel-sms-gateway')
+            ->hasConfigFile()
             ->hasInstallCommand(function (InstallCommand $command): void {
-                $command->askToStarRepoOnGitHub('misaf/laravel-sms-gateway');
+                $command
+                    ->publishConfigFile()
+                    ->askToStarRepoOnGitHub('misaf/laravel-sms-gateway');
             });
     }
 
     public function packageRegistered(): void
     {
-        $this->app->singleton(SmsGatewayManager::class);
-        $this->app->alias(SmsGatewayManager::class, 'sms-gateway');
-        $this->app->bind(
-            SmsGateway::class,
-            fn(): SmsGateway => $this->app->make(SmsGatewayManager::class)->gateway(),
+        $this->app->singleton(
+            SmsGatewayManager::class,
+            fn(Application $app): SmsGatewayManager => new SmsGatewayManager($app),
         );
+
+        $this->app->alias(SmsGatewayManager::class, 'sms-gateway');
     }
 
     public function packageBooted(): void

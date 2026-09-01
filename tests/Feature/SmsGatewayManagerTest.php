@@ -3,27 +3,27 @@
 declare(strict_types=1);
 
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Request;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use Misaf\LaravelSmsGateway\Contracts\SmsGateway as SmsGatewayContract;
 use Misaf\LaravelSmsGateway\Drivers\NullSmsGatewayDriver;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
-use Misaf\LaravelSmsGateway\SmsGatewayDriver;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\CustomSmsGatewayDriver;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\NonGatewayDriver;
 
 describe('driver resolution', function (): void {
     test('reads the default driver name from config', function (): void {
-        config()->set('laravel-sms-gateway.default', 'sunway');
+        config()->set('sms-gateway.default', 'sunway');
 
         expect(SmsGateway::getDefaultDriver())->toBe('sunway');
     });
 
     test('falls back to the null driver when none is configured', function (): void {
-        config()->set('laravel-sms-gateway.default', null);
+        config()->set('sms-gateway', [
+            'defaults' => config('sms-gateway.defaults'),
+        ]);
 
         expect(SmsGateway::getDefaultDriver())->toBe('null');
         expect(SmsGateway::driver())->toBeInstanceOf(NullSmsGatewayDriver::class);
@@ -40,13 +40,7 @@ describe('driver resolution', function (): void {
             ->and($response->json('data.receptor'))->toBe('09123456789');
     });
 
-    test('gateway() rejects a driver that does not implement the contract', function (): void {
-        SmsGateway::extend('non-gateway', fn(Application $app): object => $app->make(NonGatewayDriver::class));
-
-        SmsGateway::gateway('non-gateway');
-    })->throws(LogicException::class);
-
-    test('resolves custom drivers that do not extend the base driver', function (): void {
+    test('resolves custom drivers that do not implement the gateway contract', function (): void {
         SmsGateway::extend('non-gateway', function (Application $app): object {
             return $app->make(NonGatewayDriver::class);
         });
@@ -57,13 +51,11 @@ describe('driver resolution', function (): void {
 
 describe('CustomSmsGatewayDriver', function (): void {
     beforeEach(function (): void {
-        SmsGateway::extend('custom', function (Application $app): SmsGatewayDriver {
-            return $app->make(CustomSmsGatewayDriver::class);
-        });
+        SmsGateway::extend('custom', fn(): SmsGatewayContract => new CustomSmsGatewayDriver());
     });
 
     test('resolves as the default driver when configured', function (): void {
-        config()->set('laravel-sms-gateway.default', 'custom');
+        config()->set('sms-gateway.default', 'custom');
 
         expect(SmsGateway::driver())->toBeInstanceOf(CustomSmsGatewayDriver::class);
     });
@@ -112,7 +104,7 @@ describe('CustomSmsGatewayDriver', function (): void {
         });
     });
 
-    test('applies the shared timeout defaults to requests', function (): void {
+    test('applies the timeouts it was constructed with', function (): void {
         $capturedOptions = [];
 
         Http::fake(function (Request $request, array $options) use (&$capturedOptions) {
@@ -131,8 +123,8 @@ describe('CustomSmsGatewayDriver', function (): void {
     });
 });
 
-describe('SmsGatewayDriver customization', function (): void {
-    test('overrides the shared timeout defaults in configureRequest', function (): void {
+describe('driver construction', function (): void {
+    test('a driver uses the timeouts passed by its service provider', function (): void {
         $capturedOptions = [];
 
         Http::fake(function (Request $request, array $options) use (&$capturedOptions) {
@@ -141,27 +133,10 @@ describe('SmsGatewayDriver customization', function (): void {
             return Http::response(['ok' => true], 200);
         });
 
-        SmsGateway::extend('configured', fn(): SmsGatewayDriver => new class extends SmsGatewayDriver {
-            /**
-             * @param array<string, mixed> $data
-             */
-            public function send(array $data): Response
-            {
-                return $this->request()->post('messages', $data);
-            }
-
-            protected function defaultBaseUrl(): string
-            {
-                return 'https://configured.example.test/';
-            }
-
-            protected function configureRequest(PendingRequest $request): PendingRequest
-            {
-                return $request
-                    ->timeout(30)
-                    ->connectTimeout(15);
-            }
-        });
+        SmsGateway::extend('configured', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
+            timeout: 30,
+            connectTimeout: 15,
+        ));
 
         SmsGateway::driver('configured')->send([
             'message' => 'Hello from override test',
@@ -172,65 +147,17 @@ describe('SmsGatewayDriver customization', function (): void {
             ->toHaveKey('connect_timeout', 15);
     });
 
-    test('can use a different HTTP method for send', function (): void {
-        Http::fake([
-            'https://send.example.test/v1/messages?message=Hello%20from%20send%20test&to=09123456789' => Http::response(['ok' => true], 200),
-        ]);
-
-        SmsGateway::extend('overridden-sendable', fn(): SmsGatewayDriver => new class extends SmsGatewayDriver {
-            /**
-             * @param array<string, mixed> $data
-             */
-            public function send(array $data): Response
-            {
-                return $this->request()->get('messages', $data);
-            }
-
-            protected function defaultBaseUrl(): string
-            {
-                return 'https://send.example.test/v1/';
-            }
-        });
-
-        SmsGateway::driver('overridden-sendable')->send([
-            'message' => 'Hello from send test',
-            'to'      => '09123456789',
-        ]);
-
-        Http::assertSent(function (Request $request): bool {
-            return 'GET' === $request->method()
-                && 'https://send.example.test/v1/messages?message=Hello%20from%20send%20test&to=09123456789' === $request->url();
-        });
-    });
-
-    test('prefers the base URL configured in the driver config over the driver default', function (): void {
-        config()->set('laravel-sms-gateway.default', 'overrideable');
-        config()->set('laravel-sms-gateway-overrideable.api_key', 'test-api-key');
-        config()->set('laravel-sms-gateway-overrideable.base_url', 'https://services-override.example.test/v1/');
+    test('a configured base URL wins over the driver default', function (): void {
+        config()->set('sms-gateway.default', 'overrideable');
 
         Http::fake([
-            'https://services-override.example.test/v1/sms/send.json' => Http::response(['ok' => true], 200),
+            'https://services-override.example.test/v1/messages' => Http::response(['ok' => true], 200),
         ]);
 
-        SmsGateway::extend('overrideable', fn(): SmsGatewayDriver => new class extends SmsGatewayDriver {
-            /**
-             * @param array<string, mixed> $data
-             */
-            public function send(array $data): Response
-            {
-                return $this->request()->post('sms/send.json', $data);
-            }
-
-            protected function defaultBaseUrl(): string
-            {
-                return 'https://driver-default.example.test/v1/';
-            }
-
-            protected function apiKeyHeader(): string
-            {
-                return 'apikey';
-            }
-        });
+        SmsGateway::extend('overrideable', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
+            apiKey: 'test-api-key',
+            baseUrl: 'https://services-override.example.test/v1/',
+        ));
 
         SmsGateway::driver()->send([
             'receptor' => '09123456789',
@@ -238,24 +165,25 @@ describe('SmsGatewayDriver customization', function (): void {
         ]);
 
         Http::assertSent(function (Request $request): bool {
-            return 'https://services-override.example.test/v1/sms/send.json' === $request->url()
+            return 'https://services-override.example.test/v1/messages' === $request->url()
                 && $request->hasHeader('apikey', 'test-api-key');
         });
     });
-});
 
-describe('driver name resolution', function (): void {
     test('registers the same driver class under multiple names with separate config', function (): void {
-        config()->set('laravel-sms-gateway-custom-a.base_url', 'https://a.example.test');
-        config()->set('laravel-sms-gateway-custom-b.base_url', 'https://b.example.test');
-
         Http::fake([
             'https://a.example.test/messages' => Http::response(['ok' => true], 200),
             'https://b.example.test/messages' => Http::response(['ok' => true], 200),
         ]);
 
-        SmsGateway::extend('custom-a', fn(Application $app): SmsGatewayDriver => $app->make(CustomSmsGatewayDriver::class));
-        SmsGateway::extend('custom-b', fn(Application $app): SmsGatewayDriver => $app->make(CustomSmsGatewayDriver::class));
+        SmsGateway::extend('custom-a', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
+            baseUrl: 'https://a.example.test',
+            driverName: 'custom-a',
+        ));
+        SmsGateway::extend('custom-b', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
+            baseUrl: 'https://b.example.test',
+            driverName: 'custom-b',
+        ));
 
         SmsGateway::driver('custom-a')->send(['message' => 'A']);
         SmsGateway::driver('custom-b')->send(['message' => 'B']);
@@ -264,9 +192,7 @@ describe('driver name resolution', function (): void {
         Http::assertSent(fn(Request $request): bool => 'https://b.example.test/messages' === $request->url());
     });
 
-    test('prefers an overridden driverName() over the registration key', function (): void {
-        config()->set('laravel-sms-gateway-legacy.base_url', 'https://legacy.example.test/');
-
+    test('dispatches SmsSent with the name the driver was built with', function (): void {
         Event::fake([
             SmsSent::class,
         ]);
@@ -275,25 +201,10 @@ describe('driver name resolution', function (): void {
             'https://legacy.example.test/messages' => Http::response(['ok' => true], 200),
         ]);
 
-        SmsGateway::extend('modern', fn(): SmsGatewayDriver => new class extends SmsGatewayDriver {
-            /**
-             * @param array<string, mixed> $data
-             */
-            public function send(array $data): Response
-            {
-                return $this->request()->post('messages', $data);
-            }
-
-            protected function driverName(): string
-            {
-                return 'legacy';
-            }
-
-            protected function defaultBaseUrl(): string
-            {
-                return 'https://modern-default.example.test/';
-            }
-        });
+        SmsGateway::extend('modern', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
+            baseUrl: 'https://legacy.example.test/',
+            driverName: 'legacy',
+        ));
 
         SmsGateway::driver('modern')->send(['message' => 'Hello']);
 
@@ -301,21 +212,17 @@ describe('driver name resolution', function (): void {
 
         Event::assertDispatched(fn(SmsSent $event): bool => 'legacy' === $event->driverName);
     });
-
-    test('throws when a driver is used without being resolved through the manager', function (): void {
-        (new CustomSmsGatewayDriver())->send(['message' => 'Hello']);
-    })->throws(LogicException::class);
 });
 
 describe('shared HTTP defaults', function (): void {
     test('casts string timeout values from the environment to integers', function (): void {
-        // Values set in .env always arrive as strings, but the driver reads
-        // them with Config::integer(), which rejects anything else.
+        // Values set in .env always arrive as strings, but the service providers
+        // read them with Config::integer(), which rejects anything else.
         $_SERVER['SMS_GATEWAY_TIMEOUT'] = '30';
         $_SERVER['SMS_GATEWAY_CONNECT_TIMEOUT'] = '15';
 
         try {
-            $defaults = (require __DIR__ . '/../../config/laravel-sms-gateway.php')['defaults'];
+            $defaults = (require __DIR__ . '/../../config/sms-gateway.php')['defaults'];
         } finally {
             unset($_SERVER['SMS_GATEWAY_TIMEOUT'], $_SERVER['SMS_GATEWAY_CONNECT_TIMEOUT']);
         }
