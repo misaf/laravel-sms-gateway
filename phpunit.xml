@@ -5,23 +5,37 @@
          colors="true"
 >
     <testsuites>
-        <testsuite name="Unit">
-            <directory>tests/Unit</directory>
-            <directory>src/Drivers/*/tests/Unit</directory>
-        </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
-            <directory>src/Drivers/*/tests/Feature</directory>
+            <directory>Drivers/*/tests/Feature</directory>
+            <directory>Drivers/*/tests/Registration</directory>
         </testsuite>
         <testsuite name="Architecture">
             <file>tests/ArchTest.php</file>
-            <directory suffix="ArchTest.php">src/Drivers</directory>
+            <directory suffix="ArchTest.php">Drivers</directory>
         </testsuite>
     </testsuites>
 
     <source>
         <include>
-            <directory>src</directory>
+            <directory suffix=".php">src/Contracts</directory>
+            <directory suffix=".php">src/Drivers</directory>
+            <directory suffix=".php">src/Events</directory>
+            <directory suffix=".php">src/Facades</directory>
+            <directory suffix=".php">src/Providers</directory>
+            <file>src/SmsGatewayManager.php</file>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-ghasedak/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-ippanel/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-kavenegar/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-magfa/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-melipayamak/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-messagebird/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-plivo/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-smsir/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-sunway/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-textlocal/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-twilio/src</directory>
+            <directory suffix=".php">Drivers/laravel-sms-gateway-vonage/src</directory>
         </include>
     </source>
 

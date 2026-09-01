@@ -1,0 +1,57 @@
+{
+    "name": "misaf/laravel-sms-gateway-ippanel",
+    "description": "IPPanel SMS gateway driver for Laravel SMS Gateway.",
+    "license": "MIT",
+    "type": "library",
+    "keywords": [
+        "laravel",
+        "laravel-package",
+        "sms",
+        "sms-api",
+        "sms-gateway",
+        "sms-provider",
+        "sms-driver",
+        "ippanel",
+        "ippanel-sms"
+    ],
+    "authors": [
+        {
+            "name": "Ehsan Mahmoodi",
+            "email": "misaf.1990@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "homepage": "https://github.com/misaf/laravel-sms-gateway-ippanel",
+    "support": {
+        "issues": "https://github.com/misaf/laravel-sms-gateway-ippanel/issues",
+        "source": "https://github.com/misaf/laravel-sms-gateway-ippanel"
+    },
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^13.0",
+        "illuminate/http": "^13.0",
+        "illuminate/support": "^13.0",
+        "misaf/laravel-sms-gateway": "^1.0",
+        "spatie/laravel-package-tools": "^1.93"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "Misaf\\LaravelSmsGatewayIppanel\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Misaf\\LaravelSmsGatewayIppanel\\Providers\\IppanelServiceProvider"
+            ]
+        }
+    },
+    "$schema": "https://getcomposer.org/schema.json"
+}
