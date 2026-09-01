@@ -30,14 +30,23 @@ final class KavenegarServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->callAfterResolving(SmsGatewayManager::class, function (SmsGatewayManager $manager): void {
-            $manager->extend('kavenegar', fn(): SmsGateway => new KavenegarDriver(
-                apiKey: Config::string('sms-gateway-kavenegar.api_key'),
-                baseUrl: Config::string('sms-gateway-kavenegar.base_url'),
-                timeout: Config::integer('sms-gateway.defaults.timeout'),
-                connectTimeout: Config::integer('sms-gateway.defaults.connect_timeout'),
-            ));
-        });
+        // Deferred, so this provider never resolves the manager itself. Doing
+        // so during registration would build a throwaway manager whenever this
+        // package is registered before the core one, silently losing the
+        // driver.
+        $this->callAfterResolving(
+            SmsGatewayManager::class,
+            function (SmsGatewayManager $manager): void {
+                $manager->extend('kavenegar', fn(): SmsGateway => new KavenegarDriver(
+                    apiKey: Config::string('sms-gateway-kavenegar.api_key'),
+                    baseUrl: Config::string('sms-gateway-kavenegar.base_url'),
+                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
+                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
+                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                ));
+            }
+        );
     }
 
     public function packageBooted(): void

@@ -21,6 +21,8 @@ This package is developed inside the `misaf/laravel-sms-gateway` monorepo at
 - The driver takes its credentials and timeouts as constructor arguments; the
   service provider reads them from `sms-gateway-sunway.*` and
   `sms-gateway.defaults.*`.
-- Build requests with the driver's own `request()`, which applies the timeouts
-  and dispatches the `SmsSent` event via `afterResponse()`.
+- Build requests with the driver's own `request()`, which applies the timeouts,
+  the retry policy, and dispatches the `SmsSent` event via `afterResponse()`.
+- Retry only connection failures and gateway 5xx responses, via `shouldRetry()`;
+  a rejected credential or a malformed payload must fail on the first attempt.
 - Keep the driver free of any dependency on sibling driver packages.
