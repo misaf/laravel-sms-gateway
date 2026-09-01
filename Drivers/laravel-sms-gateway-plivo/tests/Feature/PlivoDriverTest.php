@@ -52,3 +52,23 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/v1/Account/MA123/Message/' === $request->url();
     });
 });
+
+test('rejects a configured but empty auth ID', function (): void {
+    config()->set('sms-gateway-plivo.auth_id', '');
+
+    expect(fn() => SmsGateway::driver('plivo'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Plivo auth ID is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});
+
+test('rejects a configured but empty auth token', function (): void {
+    config()->set('sms-gateway-plivo.auth_token', '');
+
+    expect(fn() => SmsGateway::driver('plivo'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Plivo auth token is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

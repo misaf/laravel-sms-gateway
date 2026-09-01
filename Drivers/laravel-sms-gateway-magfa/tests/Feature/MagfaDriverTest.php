@@ -51,3 +51,23 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/send' === $request->url();
     });
 });
+
+test('rejects a configured but empty username', function (): void {
+    config()->set('sms-gateway-magfa.username', '');
+
+    expect(fn() => SmsGateway::driver('magfa'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Magfa username is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});
+
+test('rejects a configured but empty password', function (): void {
+    config()->set('sms-gateway-magfa.password', '');
+
+    expect(fn() => SmsGateway::driver('magfa'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Magfa password is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

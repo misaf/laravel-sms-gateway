@@ -50,3 +50,13 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/messages' === $request->url();
     });
 });
+
+test('rejects a configured but empty access key', function (): void {
+    config()->set('sms-gateway-messagebird.access_key', '');
+
+    expect(fn() => SmsGateway::driver('messagebird'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The MessageBird access key is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

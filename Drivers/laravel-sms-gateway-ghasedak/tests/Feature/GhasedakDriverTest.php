@@ -50,3 +50,13 @@ test('prefers the base URL configured in the driver config over the driver defau
             && $request->hasHeader('apikey', 'ghasedak-api-key');
     });
 });
+
+test('rejects a configured but empty API key', function (): void {
+    config()->set('sms-gateway-ghasedak.api_key', '');
+
+    expect(fn() => SmsGateway::driver('ghasedak'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Ghasedak API key is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

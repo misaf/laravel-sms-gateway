@@ -55,3 +55,23 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/sms/json' === strtok($request->url(), '?');
     });
 });
+
+test('rejects a configured but empty API key', function (): void {
+    config()->set('sms-gateway-vonage.api_key', '');
+
+    expect(fn() => SmsGateway::driver('vonage'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Vonage API key is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});
+
+test('rejects a configured but empty API secret', function (): void {
+    config()->set('sms-gateway-vonage.api_secret', '');
+
+    expect(fn() => SmsGateway::driver('vonage'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Vonage API secret is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

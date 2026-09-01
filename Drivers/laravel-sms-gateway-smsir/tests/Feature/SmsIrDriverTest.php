@@ -48,3 +48,13 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/v1/send/bulk' === $request->url();
     });
 });
+
+test('rejects a configured but empty API key', function (): void {
+    config()->set('sms-gateway-smsir.api_key', '');
+
+    expect(fn() => SmsGateway::driver('smsir'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The SMS.ir API key is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

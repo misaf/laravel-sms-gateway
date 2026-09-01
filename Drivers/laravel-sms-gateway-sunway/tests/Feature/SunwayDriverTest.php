@@ -52,3 +52,23 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/smsws/HttpService.ashx' === strtok($request->url(), '?');
     });
 });
+
+test('rejects a configured but empty username', function (): void {
+    config()->set('sms-gateway-sunway.username', '');
+
+    expect(fn() => SmsGateway::driver('sunway'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Sunway username is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});
+
+test('rejects a configured but empty password', function (): void {
+    config()->set('sms-gateway-sunway.password', '');
+
+    expect(fn() => SmsGateway::driver('sunway'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Sunway password is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

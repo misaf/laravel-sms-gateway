@@ -71,3 +71,23 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/2010-04-01/Accounts/AC123/Messages.json' === $request->url();
     });
 });
+
+test('rejects a configured but empty account SID', function (): void {
+    config()->set('sms-gateway-twilio.account_sid', '');
+
+    expect(fn() => SmsGateway::driver('twilio'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Twilio account SID is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});
+
+test('rejects a configured but empty auth token', function (): void {
+    config()->set('sms-gateway-twilio.auth_token', '');
+
+    expect(fn() => SmsGateway::driver('twilio'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Twilio auth token is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

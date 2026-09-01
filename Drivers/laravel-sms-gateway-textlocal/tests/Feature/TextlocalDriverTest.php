@@ -53,3 +53,13 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/send/' === strtok($request->url(), '?');
     });
 });
+
+test('rejects a configured but empty API key', function (): void {
+    config()->set('sms-gateway-textlocal.api_key', '');
+
+    expect(fn() => SmsGateway::driver('textlocal'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Textlocal API key is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});

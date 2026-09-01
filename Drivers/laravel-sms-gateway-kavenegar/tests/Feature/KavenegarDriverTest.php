@@ -48,3 +48,13 @@ test('prefers the base URL configured in the driver config over the driver defau
         return 'https://services-override.example.test/v1/test-api-key/sms/send.json' === $request->url();
     });
 });
+
+test('rejects a configured but empty API key', function (): void {
+    config()->set('sms-gateway-kavenegar.api_key', '');
+
+    expect(fn() => SmsGateway::driver('kavenegar'))
+        ->toThrow(
+            InvalidArgumentException::class,
+            "The Kavenegar API key is empty. Set it in the driver's config file, or in the matching environment variable."
+        );
+});
