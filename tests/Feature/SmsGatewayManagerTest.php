@@ -248,8 +248,6 @@ describe('retry policy', function (): void {
 
 describe('shared HTTP defaults', function (): void {
     test('casts string timeout and retry values from the environment to integers', function (): void {
-        // Values set in .env always arrive as strings, but the service providers
-        // read them with Config::integer(), which rejects anything else.
         $_SERVER['SMS_GATEWAY_SERVER_TIMEOUT'] = '15';
         $_SERVER['SMS_GATEWAY_CLIENT_TIMEOUT'] = '30';
         $_SERVER['SMS_GATEWAY_RETRY_TIMES'] = '4';

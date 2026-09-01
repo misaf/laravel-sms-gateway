@@ -6,8 +6,10 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
+use InvalidArgumentException;
 use Misaf\LaravelSmsGateway\Events\SmsSendFailed;
 use Misaf\LaravelSmsGateway\Events\SmsSending;
+use Misaf\LaravelSmsGateway\Events\SmsSendUnreachable;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\BaseSmsGatewayDriver;
 
@@ -67,14 +69,13 @@ describe('the shared driver base', function (): void {
         expect($response->status())->toBe(422);
         Event::assertNotDispatched(SmsSent::class);
         Event::assertDispatched(fn(SmsSendFailed $event): bool => 'base' === $event->driverName
-            && 422 === $event->response?->status()
-            && 'invalid' === $event->response?->json('error')
-            && 'https://base.example.com/messages' === $event->request?->url()
-            && null === $event->exception);
+            && 422 === $event->response->status()
+            && 'invalid' === $event->response->json('error')
+            && 'https://base.example.com/messages' === $event->request->url());
     });
 
-    test('dispatches SmsSendFailed with the exception when the gateway is unreachable', function (): void {
-        Event::fake([SmsSent::class, SmsSendFailed::class]);
+    test('dispatches SmsSendUnreachable when the gateway is never reached', function (): void {
+        Event::fake([SmsSent::class, SmsSendFailed::class, SmsSendUnreachable::class]);
 
         Http::fake([
             'https://base.example.com/messages' => fn(): never => throw new ConnectionException('Connection timed out'),
@@ -84,9 +85,8 @@ describe('the shared driver base', function (): void {
             ->toThrow(ConnectionException::class);
 
         Event::assertNotDispatched(SmsSent::class);
-        Event::assertDispatched(fn(SmsSendFailed $event): bool => 'base' === $event->driverName
-            && null === $event->request
-            && null === $event->response
+        Event::assertNotDispatched(SmsSendFailed::class);
+        Event::assertDispatched(fn(SmsSendUnreachable $event): bool => 'base' === $event->driverName
             && $event->exception instanceof ConnectionException);
     });
 
@@ -101,5 +101,21 @@ describe('the shared driver base', function (): void {
 
         expect($response->json('id'))->toBe('sms-1');
         Http::assertSentCount(2);
+    });
+
+    test('rejects an empty base URL', function (): void {
+        expect(fn(): BaseSmsGatewayDriver => new BaseSmsGatewayDriver(''))
+            ->toThrow(
+                InvalidArgumentException::class,
+                "The base URL is empty. Set it in the driver's config file, or in the matching environment variable."
+            );
+    });
+
+    test('rejects an empty credential guarded by the driver', function (): void {
+        expect(fn(): BaseSmsGatewayDriver => new BaseSmsGatewayDriver(apiKey: ''))
+            ->toThrow(
+                InvalidArgumentException::class,
+                "The API key is empty. Set it in the driver's config file, or in the matching environment variable."
+            );
     });
 });

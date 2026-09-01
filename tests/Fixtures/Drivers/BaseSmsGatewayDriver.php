@@ -19,6 +19,8 @@ final class BaseSmsGatewayDriver extends SmsGatewayDriver
         int $retrySleepMilliseconds = 0,
     ) {
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+
+        self::requireConfigured($apiKey, 'API key');
     }
 
     protected function name(): string
