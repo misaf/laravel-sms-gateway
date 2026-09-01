@@ -117,14 +117,24 @@ final class StoreSmsGatewayResult
 `config/sms-gateway.php`:
 
 - `default` — the driver name (`SMS_GATEWAY_DRIVER`), falling back to `null`.
-- `defaults.timeout` — the shared request timeout in seconds
-  (`SMS_GATEWAY_TIMEOUT`), defaulting to `10`.
-- `defaults.connect_timeout` — the shared connection timeout in seconds
-  (`SMS_GATEWAY_CONNECT_TIMEOUT`), defaulting to `5`.
+- `defaults.server_timeout` — the shared connection timeout in seconds
+  (`SMS_GATEWAY_SERVER_TIMEOUT`), defaulting to `5`.
+- `defaults.client_timeout` — the shared request timeout in seconds
+  (`SMS_GATEWAY_CLIENT_TIMEOUT`), defaulting to `6`, one second above the
+  connection timeout so a slow gateway loses the race.
+- `defaults.retry_times` — how many attempts a request gets
+  (`SMS_GATEWAY_RETRY_TIMES`), defaulting to `2`.
+- `defaults.retry_sleep_milliseconds` — the pause between attempts
+  (`SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS`), defaulting to `100`.
+
+Only connection failures and gateway 5xx responses are retried; a rejected
+credential or a malformed payload fails on the first attempt.
 
 ```env
-SMS_GATEWAY_TIMEOUT=10
-SMS_GATEWAY_CONNECT_TIMEOUT=5
+SMS_GATEWAY_SERVER_TIMEOUT=5
+SMS_GATEWAY_CLIENT_TIMEOUT=6
+SMS_GATEWAY_RETRY_TIMES=2
+SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS=100
 ```
 
 That is the whole core configuration. Endpoints and credentials belong to the
@@ -138,12 +148,15 @@ base URL, its authentication, and the `SmsSent` dispatch.
 ```php
 namespace App\SmsGateways;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Contracts\SmsGateway;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
+use Throwable;
 
 final class CustomDriver implements SmsGateway
 {
@@ -152,8 +165,10 @@ final class CustomDriver implements SmsGateway
     public function __construct(
         private readonly string $token = '',
         private readonly string $baseUrl = '',
-        private readonly int $timeout = 10,
-        private readonly int $connectTimeout = 5,
+        private readonly int $serverTimeout = 5,
+        private readonly int $clientTimeout = 6,
+        private readonly int $retryTimes = 2,
+        private readonly int $retrySleepMilliseconds = 100,
     ) {}
 
     /**
@@ -167,14 +182,30 @@ final class CustomDriver implements SmsGateway
     public function request(): PendingRequest
     {
         return Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : self::DEFAULT_BASE_URL)
-            ->timeout($this->timeout)
-            ->connectTimeout($this->connectTimeout)
+            ->connectTimeout($this->serverTimeout)
+            ->timeout($this->clientTimeout)
+            ->retry(
+                $this->retryTimes,
+                $this->retrySleepMilliseconds,
+                $this->shouldRetry(...),
+                throw: false,
+            )
             ->withToken($this->token)
             ->afterResponse(function (Response $response, Request $request): Response {
                 SmsSent::dispatch('custom', $request, $response);
 
                 return $response;
             });
+    }
+
+    private function shouldRetry(Throwable $exception): bool
+    {
+        if ($exception instanceof ConnectionException) {
+            return true;
+        }
+
+        return $exception instanceof RequestException
+            && $exception->response->serverError();
     }
 }
 ```
@@ -186,8 +217,10 @@ use Illuminate\Support\Facades\Config;
 
 SmsGateway::extend('custom', fn (): SmsGateway => new CustomDriver(
     token: Config::string('services.custom.token'),
-    timeout: Config::integer('sms-gateway.defaults.timeout'),
-    connectTimeout: Config::integer('sms-gateway.defaults.connect_timeout'),
+    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
+    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
+    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
+    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
 ));
 ```
 

@@ -118,7 +118,7 @@ describe('CustomSmsGatewayDriver', function (): void {
         ]);
 
         expect($capturedOptions)
-            ->toHaveKey('timeout', 10)
+            ->toHaveKey('timeout', 6)
             ->toHaveKey('connect_timeout', 5);
     });
 });
@@ -134,8 +134,8 @@ describe('driver construction', function (): void {
         });
 
         SmsGateway::extend('configured', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
-            timeout: 30,
-            connectTimeout: 15,
+            serverTimeout: 15,
+            clientTimeout: 30,
         ));
 
         SmsGateway::driver('configured')->send([
@@ -214,20 +214,61 @@ describe('driver construction', function (): void {
     });
 });
 
+describe('retry policy', function (): void {
+    beforeEach(function (): void {
+        SmsGateway::extend('custom', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
+            retrySleepMilliseconds: 0,
+        ));
+    });
+
+    test('retries a gateway server error and returns the eventual success', function (): void {
+        Http::fake([
+            'https://custom.example.com/*' => Http::sequence()
+                ->push(['error' => 'busy'], 500)
+                ->push(['ok' => true], 200),
+        ]);
+
+        $response = SmsGateway::driver('custom')->send(['message' => 'Hello']);
+
+        expect($response->status())->toBe(200);
+        Http::assertSentCount(2);
+    });
+
+    test('does not retry a client error such as a rejected credential', function (): void {
+        Http::fake([
+            'https://custom.example.com/*' => Http::response(['error' => 'unauthorized'], 401),
+        ]);
+
+        $response = SmsGateway::driver('custom')->send(['message' => 'Hello']);
+
+        expect($response->status())->toBe(401);
+        Http::assertSentCount(1);
+    });
+});
+
 describe('shared HTTP defaults', function (): void {
-    test('casts string timeout values from the environment to integers', function (): void {
+    test('casts string timeout and retry values from the environment to integers', function (): void {
         // Values set in .env always arrive as strings, but the service providers
         // read them with Config::integer(), which rejects anything else.
-        $_SERVER['SMS_GATEWAY_TIMEOUT'] = '30';
-        $_SERVER['SMS_GATEWAY_CONNECT_TIMEOUT'] = '15';
+        $_SERVER['SMS_GATEWAY_SERVER_TIMEOUT'] = '15';
+        $_SERVER['SMS_GATEWAY_CLIENT_TIMEOUT'] = '30';
+        $_SERVER['SMS_GATEWAY_RETRY_TIMES'] = '4';
+        $_SERVER['SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS'] = '250';
 
         try {
             $defaults = (require __DIR__ . '/../../config/sms-gateway.php')['defaults'];
         } finally {
-            unset($_SERVER['SMS_GATEWAY_TIMEOUT'], $_SERVER['SMS_GATEWAY_CONNECT_TIMEOUT']);
+            unset(
+                $_SERVER['SMS_GATEWAY_SERVER_TIMEOUT'],
+                $_SERVER['SMS_GATEWAY_CLIENT_TIMEOUT'],
+                $_SERVER['SMS_GATEWAY_RETRY_TIMES'],
+                $_SERVER['SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS'],
+            );
         }
 
-        expect($defaults['timeout'])->toBe(30)
-            ->and($defaults['connect_timeout'])->toBe(15);
+        expect($defaults['server_timeout'])->toBe(15)
+            ->and($defaults['client_timeout'])->toBe(30)
+            ->and($defaults['retry_times'])->toBe(4)
+            ->and($defaults['retry_sleep_milliseconds'])->toBe(250);
     });
 });

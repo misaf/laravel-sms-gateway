@@ -22,13 +22,17 @@ return [
     | Default HTTP Client Options
     |--------------------------------------------------------------------------
     |
-    | These values are used by all HTTP gateway drivers.
+    | These values are used by all HTTP gateway drivers. The connect timeout
+    | bounds the wait for the gateway, the request timeout is slightly larger
+    | so a slow gateway loses the race, and failed attempts are retried.
     |
     */
 
     'defaults' => [
-        'timeout'         => (int) env('SMS_GATEWAY_TIMEOUT', 10),
-        'connect_timeout' => (int) env('SMS_GATEWAY_CONNECT_TIMEOUT', 5),
+        'server_timeout'            => (int) env('SMS_GATEWAY_SERVER_TIMEOUT', 5),
+        'client_timeout'            => (int) env('SMS_GATEWAY_CLIENT_TIMEOUT', 6),
+        'retry_times'               => (int) env('SMS_GATEWAY_RETRY_TIMES', 2),
+        'retry_sleep_milliseconds'  => (int) env('SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS', 100),
     ],
 
 ];
