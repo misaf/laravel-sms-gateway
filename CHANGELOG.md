@@ -16,10 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `sendRequest()` and, when it has credentials, `configure()`.
 - `SmsSending`, dispatched before a send attempt with the driver name and the
   payload.
-- `SmsSendFailed`, dispatched when a gateway rejects a send (with the request
-  and response) or is unreachable (with the exception). Because the retry
-  policy is configured with `throw: false`, this is how a failed send is
-  observed.
+- `SmsSendFailed`, dispatched when a gateway rejects a send, with the request
+  and response. Because the retry policy is configured with `throw: false`,
+  this is how a failed send is observed.
+- `SmsSendUnreachable`, dispatched with the exception when the gateway is never
+  reached — a connection error or a timeout — after which the exception
+  surfaces to the caller.
+
+- Per-driver `timeout.server`, `timeout.client`, `retry.times` and
+  `retry.sleep_milliseconds` config keys, each with its own environment
+  variable (e.g. `SMS_GATEWAY_TWILIO_RETRY_TIMES`) and its own default, so a
+  single gateway can be tuned without changing the others. The driver packages
+  no longer read `sms-gateway.defaults.*`, which now serves custom drivers
+  only.
 
 ### Changed
 
@@ -32,6 +41,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   throws an `InvalidArgumentException` at driver resolution instead of sending
   to a relative URL. A config published before this release keeps its empty
   default and must be republished or given a value.
+- **Breaking.** `SmsGatewayDriver` and the first-party drivers no longer give
+  their `$serverTimeout`, `$clientTimeout`, `$retryTimes` and
+  `$retrySleepMilliseconds` constructor arguments defaults. Every value is
+  passed from the driver's config file, which stays the single place the
+  numbers are written down. A custom driver that relied on the defaults must
+  pass all four.
+- **Breaking.** A driver credential that is configured but empty now throws an
+  `InvalidArgumentException` at driver resolution, like an empty `base_url`.
+  An `.env` key that is present but empty reaches the driver as an empty
+  string, past the `env()` default, and previously produced a provider 401 —
+  after the full retry budget — instead of a clear configuration error.
 - **Breaking.** The Kavenegar, Plivo and Twilio `base_url` values no longer
   contain the account segment (the API key, auth id and account sid). The
   drivers now prepend it to the request path, so `base_url` stays a plain host

@@ -43,10 +43,11 @@ composer require misaf/laravel-sms-gateway-ghasedak
 All service providers are auto-registered, and each driver registers itself on
 the core manager. See each driver's README for its credentials and options.
 
-Driver credentials are required and have no config default, so a missing
-`SMS_GATEWAY_*` environment variable fails when the driver is resolved instead
-of sending an unauthenticated request. Base URLs stay optional: leave one empty
-and the driver uses its built-in endpoint.
+Driver credentials are required and have no config default, so a missing or
+empty `SMS_GATEWAY_*` environment variable fails when the driver is resolved
+instead of sending an unauthenticated request. A driver's base URL is required
+too: it ships with a working default in the published config, and emptying it
+fails at resolution rather than sending to a relative URL.
 
 Publish the config:
 
@@ -102,18 +103,21 @@ $response = SmsGateway::driver('ghasedak')
 
 ### Events
 
-Every HTTP driver dispatches three events from the
+Every HTTP driver dispatches four events from the
 `Misaf\LaravelSmsGateway\Events` namespace:
 
 - `SmsSending` — before the request leaves, with the driver name and the payload
 - `SmsSent` — after a successful (2xx) response, with the driver name and the
   Laravel HTTP `Request` and `Response`
-- `SmsSendFailed` — after a failed response, or when the gateway was never
-  reached. On a failed response the `request` and `response` are present; on a
-  connection error or timeout they are `null` and `exception` is set instead
+- `SmsSendFailed` — after a failed (non-2xx) response, with the driver name and
+  the Laravel HTTP `Request` and `Response`
+- `SmsSendUnreachable` — when the gateway was never reached, a connection error
+  or a timeout, with the driver name and the `exception`. There is no request or
+  response to report, so the failure gets its own event
 
 ```php
 use Misaf\LaravelSmsGateway\Events\SmsSendFailed;
+use Misaf\LaravelSmsGateway\Events\SmsSendUnreachable;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 
 final class StoreSmsGatewayResult
@@ -129,24 +133,33 @@ final class ReportSmsGatewayFailure
     public function handle(SmsSendFailed $event): void
     {
         logger()->error($event->driverName, [
-            'status' => $event->response?->status(),
-            'reason' => $event->exception?->getMessage(),
+            'status' => $event->response->status(),
+            'body'   => $event->response->body(),
+        ]);
+    }
+
+    public function handleUnreachable(SmsSendUnreachable $event): void
+    {
+        logger()->error($event->driverName, [
+            'reason' => $event->exception->getMessage(),
         ]);
     }
 }
 ```
 
 Because the retry policy is configured with `throw: false`, a rejected send does
-not raise an exception — `SmsSendFailed` is how you observe it.
+not raise an exception — `SmsSendFailed` is how you observe it. A connection
+error or timeout still raises after the retries are spent, and
+`SmsSendUnreachable` is dispatched just before it surfaces.
 
 ## Configuration
 
 `config/sms-gateway.php`:
 
 - `default` — the driver name (`SMS_GATEWAY_DRIVER`), falling back to `null`.
-- `defaults.server_timeout` — the shared connection timeout in seconds
+- `defaults.server_timeout` — the connection timeout in seconds
   (`SMS_GATEWAY_SERVER_TIMEOUT`), defaulting to `5`.
-- `defaults.client_timeout` — the shared request timeout in seconds
+- `defaults.client_timeout` — the request timeout in seconds
   (`SMS_GATEWAY_CLIENT_TIMEOUT`), defaulting to `6`, one second above the
   connection timeout so a slow gateway loses the race.
 - `defaults.retry_times` — how many attempts a request gets
@@ -164,20 +177,27 @@ SMS_GATEWAY_RETRY_TIMES=2
 SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS=100
 ```
 
-Each driver config also carries its own `timeout.*` and `retry.*` keys, with
-driver-specific environment variables (e.g. `SMS_GATEWAY_TWILIO_SERVER_TIMEOUT`)
-that fall back to these shared values when unset.
+These values are the fallback for a custom driver. The first-party driver
+packages do not read them: each owns its own `timeout.*` and `retry.*` keys,
+with driver-specific environment variables (e.g.
+`SMS_GATEWAY_TWILIO_SERVER_TIMEOUT`), so one gateway can be tuned without
+touching the others. See the driver's README.
 
 That is the whole core configuration. Endpoints and credentials belong to the
-driver packages, where every credential key is required and every `base_url` is
-optional.
+driver packages, where every credential key and every `base_url` is required and
+may not be empty.
 
 ## Registering a custom driver
 
 Extend `Misaf\LaravelSmsGateway\Drivers\SmsGatewayDriver`. The base class owns
 the timeouts, the retry policy and the events; the driver supplies its name, its
-authentication, and the call it makes. The base URL comes from config, which is
-the only place it is defined; an empty one throws an `InvalidArgumentException`.
+authentication, and the call it makes. None of the constructor values has a
+default: every one of them comes from config, so the config file is the only
+place a number is written down. The base URL comes from config, which is
+the only place it is defined. Guard it, and every credential the driver cannot
+work without, with `self::requireConfigured($value, '<label>')`: a config key
+that is present but empty passes `Config::string()`, so an empty one throws an
+`InvalidArgumentException` at driver resolution.
 
 ```php
 namespace App\SmsGateways;
@@ -191,10 +211,10 @@ final class CustomDriver extends SmsGatewayDriver
     public function __construct(
         string $baseUrl,
         private readonly string $token,
-        int $serverTimeout = 5,
-        int $clientTimeout = 6,
-        int $retryTimes = 2,
-        int $retrySleepMilliseconds = 100,
+        int $serverTimeout,
+        int $clientTimeout,
+        int $retryTimes,
+        int $retrySleepMilliseconds,
     ) {
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
     }

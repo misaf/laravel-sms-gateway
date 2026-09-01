@@ -62,24 +62,25 @@ $response = SmsGateway::driver('twilio')->request()->get('some/endpoint');
 ```
 
 Every send dispatches the core events — `SmsSending`, then `SmsSent` on a
-successful response or `SmsSendFailed` on a failed one — with the driver name
-`twilio`. See the core package README for their payloads.
+successful response, `SmsSendFailed` on a failed one, or `SmsSendUnreachable`
+when the gateway was never reached — with the driver name `twilio`. See the
+core package README for their payloads.
 
 ## Configuration
 
 `config/sms-gateway-twilio.php`:
 
-- `account_sid` / `auth_token` — your Twilio credentials (`SMS_GATEWAY_TWILIO_ACCOUNT_SID`, `SMS_GATEWAY_TWILIO_AUTH_TOKEN`), sent as HTTP Basic authentication; the account sid also scopes the default base URL to your account; both are required — a missing environment variable fails when the driver is resolved
-- `base_url` — the endpoint (`SMS_GATEWAY_TWILIO_BASE_URL`), defaulting to the account-scoped `https://api.twilio.com/2010-04-01/Accounts/{account_sid}/`; optional, leave it empty to use that default
-- `timeout.server` — the connection timeout in seconds (`SMS_GATEWAY_TWILIO_SERVER_TIMEOUT`), defaulting to the core `SMS_GATEWAY_SERVER_TIMEOUT`, then to `5`
-- `timeout.client` — the request timeout in seconds (`SMS_GATEWAY_TWILIO_CLIENT_TIMEOUT`), defaulting to the core `SMS_GATEWAY_CLIENT_TIMEOUT`, then to `6`; keep it above the connection timeout
-- `retry.times` — how many attempts a send gets (`SMS_GATEWAY_TWILIO_RETRY_TIMES`), defaulting to the core `SMS_GATEWAY_RETRY_TIMES`, then to `2`
-- `retry.sleep_milliseconds` — the pause between attempts (`SMS_GATEWAY_TWILIO_RETRY_SLEEP_MILLISECONDS`), defaulting to the core `SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS`, then to `100`
+- `account_sid` / `auth_token` — your Twilio credentials (`SMS_GATEWAY_TWILIO_ACCOUNT_SID`, `SMS_GATEWAY_TWILIO_AUTH_TOKEN`), sent as HTTP Basic authentication; the account sid is also appended to the base URL to scope requests to your account; both are required — a missing or empty environment variable fails when the driver is resolved
+- `base_url` — the endpoint (`SMS_GATEWAY_TWILIO_BASE_URL`), defaulting to `https://api.twilio.com/2010-04-01/Accounts/`, to which the driver appends the account sid; required and may not be empty — it is the single source of truth for the endpoint, so point it at a proxy or a sandbox by editing it here
+- `timeout.server` — the connection timeout in seconds (`SMS_GATEWAY_TWILIO_SERVER_TIMEOUT`), defaulting to `5`
+- `timeout.client` — the request timeout in seconds (`SMS_GATEWAY_TWILIO_CLIENT_TIMEOUT`), defaulting to `6`; keep it above the connection timeout
+- `retry.times` — how many attempts a send gets (`SMS_GATEWAY_TWILIO_RETRY_TIMES`), defaulting to `2`
+- `retry.sleep_milliseconds` — the pause between attempts (`SMS_GATEWAY_TWILIO_RETRY_SLEEP_MILLISECONDS`), defaulting to `100`
 
 Only connection failures and gateway 5xx responses are retried; a rejected
-credential or a malformed payload fails on the first attempt. Leave the
-driver-specific timeout and retry variables unset to follow the shared defaults
-in `config/sms-gateway.php`.
+credential or a malformed payload fails on the first attempt. Timeouts and the
+retry policy belong to this driver alone, so tuning it leaves the other
+gateways untouched.
 
 ## Contributing
 

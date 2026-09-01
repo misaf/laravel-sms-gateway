@@ -19,14 +19,15 @@ This package is developed inside the `misaf/laravel-sms-gateway` monorepo at
 
 - Never edit files here in the split repository; change them in the monorepo.
 - The driver takes its credentials and timeouts as constructor arguments; the
-  service provider reads them all from `sms-gateway-melipayamak.*`; the timeout and retry
-  keys fall back to the core `SMS_GATEWAY_*` variables when the driver-specific
-  ones are unset.
+  service provider reads them all from `sms-gateway-melipayamak.*`, timeouts and retry included.
 - The driver extends `Misaf\LaravelSmsGateway\Drivers\SmsGatewayDriver`, which
   owns the timeouts, the retry policy and the `SmsSending`/`SmsSent`/
-  `SmsSendFailed` events. Implement `name()`, `sendRequest()`
+  `SmsSendFailed`/`SmsSendUnreachable` events. Implement `name()`, `sendRequest()`
   and, for credentials, `configure()`. The base URL comes from the config file,
   which is the only place it is defined.
+- Guard the base URL and each credential with `self::requireConfigured()` in the
+  constructor: a config key that is present but empty passes `Config::string()`,
+  so it is rejected at driver resolution and covered by a test.
 - Retry only connection failures and gateway 5xx responses; a rejected
   credential or a malformed payload must fail on the first attempt.
 - Keep the driver free of any dependency on sibling driver packages.
