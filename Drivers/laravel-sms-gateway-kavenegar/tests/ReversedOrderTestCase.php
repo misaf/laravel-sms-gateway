@@ -22,6 +22,17 @@ abstract class ReversedOrderTestCase extends TestbenchTestCase
     }
 
     /**
+     * The credential keys have no config default, so every test that resolves
+     * the driver needs them set.
+     *
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('sms-gateway-kavenegar.api_key', 'test-api-key');
+    }
+
+    /**
      * Registers this driver package before the core package, the order Laravel's
      * package discovery is free to pick. Nothing may depend on the core
      * provider having run first.

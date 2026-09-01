@@ -32,27 +32,6 @@ test('can send request through smsir driver', function (): void {
     expect($response['status'])->toBe(1);
 });
 
-test('does not send api key header when smsir api key is missing', function (): void {
-    config()->set('sms-gateway.default', 'smsir');
-
-    Http::fake([
-        'https://api.sms.ir/v1/send/bulk' => Http::response([
-            'status'  => 1,
-            'message' => 'ok',
-        ], 200),
-    ]);
-
-    SmsGateway::driver()->send([
-        'mobile'  => '09123456789',
-        'message' => 'Hello from sms.ir',
-    ]);
-
-    Http::assertSent(function (Request $request): bool {
-        return 'https://api.sms.ir/v1/send/bulk' === $request->url()
-            && ! $request->hasHeader('X-API-KEY');
-    });
-});
-
 test('prefers the base URL configured in the driver config over the driver default', function (): void {
     config()->set('sms-gateway.default', 'smsir');
     config()->set('sms-gateway-smsir.base_url', 'https://services-override.example.test/v1/');

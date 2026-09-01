@@ -37,7 +37,8 @@ test('can send SMS via Plivo driver', function (): void {
 
 test('prefers the base URL configured in the driver config over the driver default', function (): void {
     config()->set('sms-gateway.default', 'plivo');
-    config()->set('sms-gateway-plivo.base_url', 'https://services-override.example.test/v1/Account/MA123/');
+    config()->set('sms-gateway-plivo.auth_id', 'MA123');
+    config()->set('sms-gateway-plivo.base_url', 'https://services-override.example.test/v1/Account/');
 
     Http::fake([
         'https://services-override.example.test/*' => Http::response(['api_id' => 'api-id'], 202),

@@ -22,6 +22,18 @@ abstract class TestCase extends TestbenchTestCase
     }
 
     /**
+     * The credential keys have no config default, so every test that resolves
+     * the driver needs them set.
+     *
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('sms-gateway-vonage.api_key', 'test-api-key');
+        $app['config']->set('sms-gateway-vonage.api_secret', 'test-api-secret');
+    }
+
+    /**
      * @param  Application  $app
      * @return list<class-string>
      */

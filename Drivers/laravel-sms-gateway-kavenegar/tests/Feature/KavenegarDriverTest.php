@@ -33,7 +33,7 @@ test('can send request through kavenegar driver', function (): void {
 
 test('prefers the base URL configured in the driver config over the driver default', function (): void {
     config()->set('sms-gateway.default', 'kavenegar');
-    config()->set('sms-gateway-kavenegar.base_url', 'https://services-override.example.test/v1/test-api-key/');
+    config()->set('sms-gateway-kavenegar.base_url', 'https://services-override.example.test/v1/');
 
     Http::fake([
         'https://services-override.example.test/*' => Http::response(['return' => ['status' => 200]], 200),

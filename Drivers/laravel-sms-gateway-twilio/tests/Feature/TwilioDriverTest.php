@@ -56,7 +56,8 @@ test('twilio driver scopes the default gateway to the configured account', funct
 
 test('prefers the base URL configured in the driver config over the driver default', function (): void {
     config()->set('sms-gateway.default', 'twilio');
-    config()->set('sms-gateway-twilio.base_url', 'https://services-override.example.test/2010-04-01/Accounts/AC123/');
+    config()->set('sms-gateway-twilio.account_sid', 'AC123');
+    config()->set('sms-gateway-twilio.base_url', 'https://services-override.example.test/2010-04-01/Accounts/');
 
     Http::fake([
         'https://services-override.example.test/*' => Http::response(['status' => 'queued'], 201),

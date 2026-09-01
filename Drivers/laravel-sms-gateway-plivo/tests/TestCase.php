@@ -22,6 +22,18 @@ abstract class TestCase extends TestbenchTestCase
     }
 
     /**
+     * The credential keys have no config default, so every test that resolves
+     * the driver needs them set.
+     *
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        $app['config']->set('sms-gateway-plivo.auth_id', 'test-auth-id');
+        $app['config']->set('sms-gateway-plivo.auth_token', 'test-auth-token');
+    }
+
+    /**
      * @param  Application  $app
      * @return list<class-string>
      */

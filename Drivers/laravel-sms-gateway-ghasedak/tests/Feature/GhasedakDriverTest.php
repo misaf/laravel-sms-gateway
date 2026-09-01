@@ -31,24 +31,6 @@ test('can send simple SMS via Ghasedak driver', function (): void {
     expect($result)->toEqual($response);
 });
 
-test('does not send api key header when ghasedak api key is missing', function (): void {
-    config()->set('sms-gateway.default', 'ghasedak');
-
-    Http::fake([
-        'https://api.ghasedak.me/v2/sms/send/simple' => Http::response(['result' => ['code' => 200, 'message' => 'success']], 200),
-    ]);
-
-    SmsGateway::driver()->send([
-        'message'  => 'Here is a test message, as described in the documentation.',
-        'receptor' => '+989119632587',
-    ]);
-
-    Http::assertSent(function (Request $request): bool {
-        return 'https://api.ghasedak.me/v2/sms/send/simple' === $request->url()
-            && ! $request->hasHeader('apikey');
-    });
-});
-
 test('prefers the base URL configured in the driver config over the driver default', function (): void {
     config()->set('sms-gateway.default', 'ghasedak');
     config()->set('sms-gateway-ghasedak.api_key', 'ghasedak-api-key');
