@@ -4,66 +4,38 @@ declare(strict_types=1);
 
 namespace Misaf\LaravelSmsGatewayTextlocal;
 
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\Request;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
-use Misaf\LaravelSmsGateway\Contracts\SmsGateway;
-use Misaf\LaravelSmsGateway\Events\SmsSent;
-use Throwable;
+use Misaf\LaravelSmsGateway\Drivers\SmsGatewayDriver;
 
-final class TextlocalDriver implements SmsGateway
+final class TextlocalDriver extends SmsGatewayDriver
 {
-    private const string DEFAULT_BASE_URL = 'https://api.txtlocal.com/';
-
     public function __construct(
-        private readonly string $apiKey = '',
-        private readonly string $baseUrl = '',
-        private readonly int $serverTimeout = 5,
-        private readonly int $clientTimeout = 6,
-        private readonly int $retryTimes = 2,
-        private readonly int $retrySleepMilliseconds = 100,
-    ) {}
+        string $baseUrl,
+        private readonly string $apiKey,
+        int $serverTimeout = 5,
+        int $clientTimeout = 6,
+        int $retryTimes = 2,
+        int $retrySleepMilliseconds = 100,
+    ) {
+        parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+    }
+
+    protected function name(): string
+    {
+        return 'textlocal';
+    }
 
     /**
      * @param array<string, mixed> $data
      */
-    public function send(array $data): Response
+    protected function sendRequest(array $data): Response
     {
         return $this->request()->post('send/', $data);
     }
 
-    public function request(): PendingRequest
+    protected function configure(PendingRequest $request): PendingRequest
     {
-        return Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : self::DEFAULT_BASE_URL)
-            ->connectTimeout($this->serverTimeout)
-            ->timeout($this->clientTimeout)
-            ->retry(
-                $this->retryTimes,
-                $this->retrySleepMilliseconds,
-                $this->shouldRetry(...),
-                throw: false,
-            )
-            ->asForm()
-            ->withQueryParameters([
-                'apikey' => $this->apiKey,
-            ])
-            ->afterResponse(function (Response $response, Request $request): Response {
-                SmsSent::dispatch('textlocal', $request, $response);
-
-                return $response;
-            });
-    }
-
-    private function shouldRetry(Throwable $exception): bool
-    {
-        if ($exception instanceof ConnectionException) {
-            return true;
-        }
-
-        return $exception instanceof RequestException
-            && $exception->response->serverError();
+        return $request->withQueryParameters(['apikey' => $this->apiKey])->asForm();
     }
 }

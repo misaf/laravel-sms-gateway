@@ -38,12 +38,12 @@ final class SmsIrServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('smsir', fn(): SmsGateway => new SmsIrDriver(
-                    apiKey: Config::string('sms-gateway-smsir.api_key'),
                     baseUrl: Config::string('sms-gateway-smsir.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    apiKey: Config::string('sms-gateway-smsir.api_key'),
+                    serverTimeout: Config::integer('sms-gateway-smsir.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-smsir.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-smsir.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-smsir.retry.sleep_milliseconds'),
                 ));
             }
         );

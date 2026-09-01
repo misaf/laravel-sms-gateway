@@ -38,13 +38,13 @@ final class IppanelServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('ippanel', fn(): SmsGateway => new IppanelDriver(
+                    baseUrl: Config::string('sms-gateway-ippanel.base_url'),
                     username: Config::string('sms-gateway-ippanel.username'),
                     password: Config::string('sms-gateway-ippanel.password'),
-                    baseUrl: Config::string('sms-gateway-ippanel.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    serverTimeout: Config::integer('sms-gateway-ippanel.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-ippanel.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-ippanel.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-ippanel.retry.sleep_milliseconds'),
                 ));
             }
         );

@@ -38,13 +38,13 @@ final class PlivoServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('plivo', fn(): SmsGateway => new PlivoDriver(
+                    baseUrl: Config::string('sms-gateway-plivo.base_url'),
                     authId: Config::string('sms-gateway-plivo.auth_id'),
                     authToken: Config::string('sms-gateway-plivo.auth_token'),
-                    baseUrl: Config::string('sms-gateway-plivo.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    serverTimeout: Config::integer('sms-gateway-plivo.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-plivo.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-plivo.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-plivo.retry.sleep_milliseconds'),
                 ));
             }
         );

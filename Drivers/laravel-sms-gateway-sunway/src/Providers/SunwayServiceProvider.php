@@ -38,13 +38,13 @@ final class SunwayServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('sunway', fn(): SmsGateway => new SunwayDriver(
+                    baseUrl: Config::string('sms-gateway-sunway.base_url'),
                     username: Config::string('sms-gateway-sunway.username'),
                     password: Config::string('sms-gateway-sunway.password'),
-                    baseUrl: Config::string('sms-gateway-sunway.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    serverTimeout: Config::integer('sms-gateway-sunway.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-sunway.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-sunway.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-sunway.retry.sleep_milliseconds'),
                 ));
             }
         );

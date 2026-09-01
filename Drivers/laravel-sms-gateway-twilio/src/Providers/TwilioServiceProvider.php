@@ -38,13 +38,13 @@ final class TwilioServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('twilio', fn(): SmsGateway => new TwilioDriver(
+                    baseUrl: Config::string('sms-gateway-twilio.base_url'),
                     accountSid: Config::string('sms-gateway-twilio.account_sid'),
                     authToken: Config::string('sms-gateway-twilio.auth_token'),
-                    baseUrl: Config::string('sms-gateway-twilio.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    serverTimeout: Config::integer('sms-gateway-twilio.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-twilio.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-twilio.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-twilio.retry.sleep_milliseconds'),
                 ));
             }
         );

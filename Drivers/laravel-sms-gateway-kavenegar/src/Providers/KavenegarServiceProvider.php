@@ -38,12 +38,12 @@ final class KavenegarServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('kavenegar', fn(): SmsGateway => new KavenegarDriver(
-                    apiKey: Config::string('sms-gateway-kavenegar.api_key'),
                     baseUrl: Config::string('sms-gateway-kavenegar.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    apiKey: Config::string('sms-gateway-kavenegar.api_key'),
+                    serverTimeout: Config::integer('sms-gateway-kavenegar.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-kavenegar.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-kavenegar.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-kavenegar.retry.sleep_milliseconds'),
                 ));
             }
         );

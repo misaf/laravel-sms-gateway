@@ -38,12 +38,12 @@ final class TextlocalServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('textlocal', fn(): SmsGateway => new TextlocalDriver(
-                    apiKey: Config::string('sms-gateway-textlocal.api_key'),
                     baseUrl: Config::string('sms-gateway-textlocal.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    apiKey: Config::string('sms-gateway-textlocal.api_key'),
+                    serverTimeout: Config::integer('sms-gateway-textlocal.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-textlocal.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-textlocal.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-textlocal.retry.sleep_milliseconds'),
                 ));
             }
         );

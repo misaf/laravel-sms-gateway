@@ -38,13 +38,13 @@ final class MelipayamakServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('melipayamak', fn(): SmsGateway => new MelipayamakDriver(
+                    baseUrl: Config::string('sms-gateway-melipayamak.base_url'),
                     username: Config::string('sms-gateway-melipayamak.username'),
                     password: Config::string('sms-gateway-melipayamak.password'),
-                    baseUrl: Config::string('sms-gateway-melipayamak.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    serverTimeout: Config::integer('sms-gateway-melipayamak.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-melipayamak.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-melipayamak.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-melipayamak.retry.sleep_milliseconds'),
                 ));
             }
         );

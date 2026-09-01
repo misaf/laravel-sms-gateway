@@ -38,12 +38,12 @@ final class MessageBirdServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('messagebird', fn(): SmsGateway => new MessageBirdDriver(
-                    accessKey: Config::string('sms-gateway-messagebird.access_key'),
                     baseUrl: Config::string('sms-gateway-messagebird.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    accessKey: Config::string('sms-gateway-messagebird.access_key'),
+                    serverTimeout: Config::integer('sms-gateway-messagebird.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-messagebird.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-messagebird.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-messagebird.retry.sleep_milliseconds'),
                 ));
             }
         );

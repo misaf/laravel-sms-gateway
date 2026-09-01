@@ -38,13 +38,13 @@ final class MagfaServiceProvider extends PackageServiceProvider
             SmsGatewayManager::class,
             function (SmsGatewayManager $manager): void {
                 $manager->extend('magfa', fn(): SmsGateway => new MagfaDriver(
+                    baseUrl: Config::string('sms-gateway-magfa.base_url'),
                     username: Config::string('sms-gateway-magfa.username'),
                     password: Config::string('sms-gateway-magfa.password'),
-                    baseUrl: Config::string('sms-gateway-magfa.base_url'),
-                    serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
-                    clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
-                    retryTimes: Config::integer('sms-gateway.defaults.retry_times'),
-                    retrySleepMilliseconds: Config::integer('sms-gateway.defaults.retry_sleep_milliseconds'),
+                    serverTimeout: Config::integer('sms-gateway-magfa.timeout.server'),
+                    clientTimeout: Config::integer('sms-gateway-magfa.timeout.client'),
+                    retryTimes: Config::integer('sms-gateway-magfa.retry.times'),
+                    retrySleepMilliseconds: Config::integer('sms-gateway-magfa.retry.sleep_milliseconds'),
                 ));
             }
         );
