@@ -60,18 +60,25 @@ other MessageBird endpoint:
 $response = SmsGateway::driver('messagebird')->request()->get('some/endpoint');
 ```
 
-Every request dispatches `Misaf\LaravelSmsGateway\Events\SmsSent` with the
-driver name `messagebird` and the HTTP request and response.
+Every send dispatches the core events — `SmsSending`, then `SmsSent` on a
+successful response or `SmsSendFailed` on a failed one — with the driver name
+`messagebird`. See the core package README for their payloads.
 
 ## Configuration
 
 `config/sms-gateway-messagebird.php`:
 
-- `access_key` — your MessageBird access key (`SMS_GATEWAY_MESSAGEBIRD_ACCESS_KEY`), sent as the `Authorization: AccessKey {key}` header
-- `base_url` — the endpoint (`SMS_GATEWAY_MESSAGEBIRD_BASE_URL`), defaulting to `https://rest.messagebird.com/`
+- `access_key` — your MessageBird access key (`SMS_GATEWAY_MESSAGEBIRD_ACCESS_KEY`), sent as the `Authorization: AccessKey {key}` header; required — a missing environment variable fails when the driver is resolved
+- `base_url` — the endpoint (`SMS_GATEWAY_MESSAGEBIRD_BASE_URL`), defaulting to `https://rest.messagebird.com/`; optional, leave it empty to use that default
+- `timeout.server` — the connection timeout in seconds (`SMS_GATEWAY_MESSAGEBIRD_SERVER_TIMEOUT`), defaulting to the core `SMS_GATEWAY_SERVER_TIMEOUT`, then to `5`
+- `timeout.client` — the request timeout in seconds (`SMS_GATEWAY_MESSAGEBIRD_CLIENT_TIMEOUT`), defaulting to the core `SMS_GATEWAY_CLIENT_TIMEOUT`, then to `6`; keep it above the connection timeout
+- `retry.times` — how many attempts a send gets (`SMS_GATEWAY_MESSAGEBIRD_RETRY_TIMES`), defaulting to the core `SMS_GATEWAY_RETRY_TIMES`, then to `2`
+- `retry.sleep_milliseconds` — the pause between attempts (`SMS_GATEWAY_MESSAGEBIRD_RETRY_SLEEP_MILLISECONDS`), defaulting to the core `SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS`, then to `100`
 
-Timeouts are shared with the core package — `SMS_GATEWAY_TIMEOUT` and
-`SMS_GATEWAY_CONNECT_TIMEOUT` from `config/sms-gateway.php`.
+Only connection failures and gateway 5xx responses are retried; a rejected
+credential or a malformed payload fails on the first attempt. Leave the
+driver-specific timeout and retry variables unset to follow the shared defaults
+in `config/sms-gateway.php`.
 
 ## Contributing
 

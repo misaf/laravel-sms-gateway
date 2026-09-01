@@ -7,4 +7,5 @@ This package adds the `messagebird` driver to `misaf/laravel-sms-gateway`.
   instantiate `MessageBirdDriver` directly — it needs its driver name injected.
 - Send with `SmsGateway::driver('messagebird')->send([...])`; the payload is passed
   through to the provider unchanged.
-- Every response dispatches `Misaf\LaravelSmsGateway\Events\SmsSent`.
+- Every send dispatches `Misaf\LaravelSmsGateway\Events\SmsSending`, then
+  `SmsSent` on a successful response or `SmsSendFailed` on a failed one.

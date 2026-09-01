@@ -61,18 +61,25 @@ other Vonage endpoint:
 $response = SmsGateway::driver('vonage')->request()->get('some/endpoint');
 ```
 
-Every request dispatches `Misaf\LaravelSmsGateway\Events\SmsSent` with the
-driver name `vonage` and the HTTP request and response.
+Every send dispatches the core events — `SmsSending`, then `SmsSent` on a
+successful response or `SmsSendFailed` on a failed one — with the driver name
+`vonage`. See the core package README for their payloads.
 
 ## Configuration
 
 `config/sms-gateway-vonage.php`:
 
-- `api_key` / `api_secret` — your Vonage credentials (`SMS_GATEWAY_VONAGE_API_KEY`, `SMS_GATEWAY_VONAGE_API_SECRET`), sent as the `api_key` and `api_secret` query parameters
-- `base_url` — the endpoint (`SMS_GATEWAY_VONAGE_BASE_URL`), defaulting to `https://rest.nexmo.com/`
+- `api_key` / `api_secret` — your Vonage credentials (`SMS_GATEWAY_VONAGE_API_KEY`, `SMS_GATEWAY_VONAGE_API_SECRET`), sent as the `api_key` and `api_secret` query parameters; both are required — a missing environment variable fails when the driver is resolved
+- `base_url` — the endpoint (`SMS_GATEWAY_VONAGE_BASE_URL`), defaulting to `https://rest.nexmo.com/`; optional, leave it empty to use that default
+- `timeout.server` — the connection timeout in seconds (`SMS_GATEWAY_VONAGE_SERVER_TIMEOUT`), defaulting to the core `SMS_GATEWAY_SERVER_TIMEOUT`, then to `5`
+- `timeout.client` — the request timeout in seconds (`SMS_GATEWAY_VONAGE_CLIENT_TIMEOUT`), defaulting to the core `SMS_GATEWAY_CLIENT_TIMEOUT`, then to `6`; keep it above the connection timeout
+- `retry.times` — how many attempts a send gets (`SMS_GATEWAY_VONAGE_RETRY_TIMES`), defaulting to the core `SMS_GATEWAY_RETRY_TIMES`, then to `2`
+- `retry.sleep_milliseconds` — the pause between attempts (`SMS_GATEWAY_VONAGE_RETRY_SLEEP_MILLISECONDS`), defaulting to the core `SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS`, then to `100`
 
-Timeouts are shared with the core package — `SMS_GATEWAY_TIMEOUT` and
-`SMS_GATEWAY_CONNECT_TIMEOUT` from `config/sms-gateway.php`.
+Only connection failures and gateway 5xx responses are retried; a rejected
+credential or a malformed payload fails on the first attempt. Leave the
+driver-specific timeout and retry variables unset to follow the shared defaults
+in `config/sms-gateway.php`.
 
 ## Contributing
 
