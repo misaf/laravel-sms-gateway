@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Contracts\SmsGateway as SmsGatewayContract;
 use Misaf\LaravelSmsGateway\Drivers\NullSmsGatewayDriver;
+use Misaf\LaravelSmsGateway\Events\SmsSending;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 use Misaf\LaravelSmsGateway\Tests\Fixtures\Drivers\CustomSmsGatewayDriver;
@@ -38,6 +39,26 @@ describe('driver resolution', function (): void {
         expect($response->status())->toBe(200)
             ->and($response->json('sent'))->toBeTrue()
             ->and($response->json('data.receptor'))->toBe('09123456789');
+    });
+
+    test('the null driver dispatches the lifecycle events', function (): void {
+        Event::fake([SmsSending::class, SmsSent::class]);
+
+        SmsGateway::driver('null')->send([
+            'message'  => 'Hello',
+            'receptor' => '09123456789',
+        ]);
+
+        Event::assertDispatched(SmsSending::class, function (SmsSending $event): bool {
+            return 'null' === $event->driverName
+                && '09123456789' === $event->data['receptor'];
+        });
+
+        Event::assertDispatched(SmsSent::class, function (SmsSent $event): bool {
+            return 'null' === $event->driverName
+                && $event->response->json('sent')
+                && 'Hello' === $event->request['message'];
+        });
     });
 
     test('resolves custom drivers that do not implement the gateway contract', function (): void {
