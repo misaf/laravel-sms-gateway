@@ -16,11 +16,9 @@ use Throwable;
 
 final class CustomSmsGatewayDriver implements SmsGateway
 {
-    private const string DEFAULT_BASE_URL = 'https://custom.example.com';
-
     public function __construct(
         private readonly string $apiKey = '',
-        private readonly string $baseUrl = '',
+        private readonly string $baseUrl = 'https://custom.example.com',
         private readonly int $serverTimeout = 5,
         private readonly int $clientTimeout = 6,
         private readonly int $retryTimes = 2,
@@ -38,7 +36,7 @@ final class CustomSmsGatewayDriver implements SmsGateway
 
     public function request(): PendingRequest
     {
-        $request = Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : self::DEFAULT_BASE_URL)
+        $request = Http::baseUrl($this->baseUrl)
             ->connectTimeout($this->serverTimeout)
             ->timeout($this->clientTimeout)
             ->retry(

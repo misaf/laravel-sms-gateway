@@ -4,7 +4,7 @@ A driver-based SMS gateway manager for Laravel.
 
 - Driver-based sending through a Laravel `Manager`, with one installable package per provider
 - Payloads pass through untouched, so every provider's own API fields stay available
-- Direct access to each driver's configured HTTP client, plus an `SmsSent` event on every request
+- Direct access to each driver's configured HTTP client, plus events for every send attempt, success, and failure
 
 ## Requirements
 
@@ -42,6 +42,11 @@ composer require misaf/laravel-sms-gateway-ghasedak
 
 All service providers are auto-registered, and each driver registers itself on
 the core manager. See each driver's README for its credentials and options.
+
+Driver credentials are required and have no config default, so a missing
+`SMS_GATEWAY_*` environment variable fails when the driver is resolved instead
+of sending an unauthenticated request. Base URLs stay optional: leave one empty
+and the driver uses its built-in endpoint.
 
 Publish the config:
 
@@ -97,10 +102,18 @@ $response = SmsGateway::driver('ghasedak')
 
 ### Events
 
-Every HTTP driver dispatches `Misaf\LaravelSmsGateway\Events\SmsSent` with the
-driver name and the Laravel HTTP `Request` and `Response`:
+Every HTTP driver dispatches three events from the
+`Misaf\LaravelSmsGateway\Events` namespace:
+
+- `SmsSending` — before the request leaves, with the driver name and the payload
+- `SmsSent` — after a successful (2xx) response, with the driver name and the
+  Laravel HTTP `Request` and `Response`
+- `SmsSendFailed` — after a failed response, or when the gateway was never
+  reached. On a failed response the `request` and `response` are present; on a
+  connection error or timeout they are `null` and `exception` is set instead
 
 ```php
+use Misaf\LaravelSmsGateway\Events\SmsSendFailed;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
 
 final class StoreSmsGatewayResult
@@ -110,7 +123,21 @@ final class StoreSmsGatewayResult
         logger($event->driverName, $event->response->json());
     }
 }
+
+final class ReportSmsGatewayFailure
+{
+    public function handle(SmsSendFailed $event): void
+    {
+        logger()->error($event->driverName, [
+            'status' => $event->response?->status(),
+            'reason' => $event->exception?->getMessage(),
+        ]);
+    }
+}
 ```
+
+Because the retry policy is configured with `throw: false`, a rejected send does
+not raise an exception — `SmsSendFailed` is how you observe it.
 
 ## Configuration
 
@@ -137,78 +164,63 @@ SMS_GATEWAY_RETRY_TIMES=2
 SMS_GATEWAY_RETRY_SLEEP_MILLISECONDS=100
 ```
 
+Each driver config also carries its own `timeout.*` and `retry.*` keys, with
+driver-specific environment variables (e.g. `SMS_GATEWAY_TWILIO_SERVER_TIMEOUT`)
+that fall back to these shared values when unset.
+
 That is the whole core configuration. Endpoints and credentials belong to the
-driver packages.
+driver packages, where every credential key is required and every `base_url` is
+optional.
 
 ## Registering a custom driver
 
-Implement the `SmsGateway` contract. Each driver is self-contained: it owns its
-base URL, its authentication, and the `SmsSent` dispatch.
+Extend `Misaf\LaravelSmsGateway\Drivers\SmsGatewayDriver`. The base class owns
+the timeouts, the retry policy and the events; the driver supplies its name, its
+authentication, and the call it makes. The base URL comes from config, which is
+the only place it is defined; an empty one throws an `InvalidArgumentException`.
 
 ```php
 namespace App\SmsGateways;
 
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Http\Client\Request;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Http;
-use Misaf\LaravelSmsGateway\Contracts\SmsGateway;
-use Misaf\LaravelSmsGateway\Events\SmsSent;
-use Throwable;
+use Misaf\LaravelSmsGateway\Drivers\SmsGatewayDriver;
 
-final class CustomDriver implements SmsGateway
+final class CustomDriver extends SmsGatewayDriver
 {
-    private const DEFAULT_BASE_URL = 'https://api.example.com';
-
     public function __construct(
-        private readonly string $token = '',
-        private readonly string $baseUrl = '',
-        private readonly int $serverTimeout = 5,
-        private readonly int $clientTimeout = 6,
-        private readonly int $retryTimes = 2,
-        private readonly int $retrySleepMilliseconds = 100,
-    ) {}
+        string $baseUrl,
+        private readonly string $token,
+        int $serverTimeout = 5,
+        int $clientTimeout = 6,
+        int $retryTimes = 2,
+        int $retrySleepMilliseconds = 100,
+    ) {
+        parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
+    }
+
+    protected function name(): string
+    {
+        return 'custom';
+    }
 
     /**
      * @param array<string, mixed> $data
      */
-    public function send(array $data): Response
+    protected function sendRequest(array $data): Response
     {
         return $this->request()->post('messages', $data);
     }
 
-    public function request(): PendingRequest
+    protected function configure(PendingRequest $request): PendingRequest
     {
-        return Http::baseUrl('' !== $this->baseUrl ? $this->baseUrl : self::DEFAULT_BASE_URL)
-            ->connectTimeout($this->serverTimeout)
-            ->timeout($this->clientTimeout)
-            ->retry(
-                $this->retryTimes,
-                $this->retrySleepMilliseconds,
-                $this->shouldRetry(...),
-                throw: false,
-            )
-            ->withToken($this->token)
-            ->afterResponse(function (Response $response, Request $request): Response {
-                SmsSent::dispatch('custom', $request, $response);
-
-                return $response;
-            });
-    }
-
-    private function shouldRetry(Throwable $exception): bool
-    {
-        if ($exception instanceof ConnectionException) {
-            return true;
-        }
-
-        return $exception instanceof RequestException
-            && $exception->response->serverError();
+        return $request->withToken($this->token);
     }
 }
 ```
+
+A driver that needs neither the shared retry policy nor the events may implement
+`Misaf\LaravelSmsGateway\Contracts\SmsGateway` directly instead.
 
 Register it from a service provider:
 
@@ -216,6 +228,7 @@ Register it from a service provider:
 use Illuminate\Support\Facades\Config;
 
 SmsGateway::extend('custom', fn (): SmsGateway => new CustomDriver(
+    baseUrl: Config::string('services.custom.base_url'),
     token: Config::string('services.custom.token'),
     serverTimeout: Config::integer('sms-gateway.defaults.server_timeout'),
     clientTimeout: Config::integer('sms-gateway.defaults.client_timeout'),
@@ -234,14 +247,17 @@ $this->callAfterResolving(
     SmsGatewayManager::class,
     fn (SmsGatewayManager $manager) => $manager->extend(
         'custom',
-        fn (): SmsGateway => new CustomDriver(),
+        fn (): SmsGateway => new CustomDriver(
+            baseUrl: Config::string('services.custom.base_url'),
+            token: Config::string('services.custom.token'),
+        ),
     ),
 );
 ```
 
 The registration key is the name used by `SmsGateway::driver('custom')`. The
-driver reads its own configuration and passes the name it dispatches `SmsSent`
-with, so nothing is inferred from the registration key.
+driver reads its own configuration and reports its own `name()` on the events,
+so nothing is inferred from the registration key.
 
 ## Contributing
 
