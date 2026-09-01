@@ -25,7 +25,7 @@ final class MelipayamakDriver extends SmsGatewayDriver
         self::requireConfigured($password, 'Melipayamak password');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'melipayamak';
     }

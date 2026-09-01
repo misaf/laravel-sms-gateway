@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Misaf\LaravelSmsGateway\Drivers\SmsGatewayDriver`, a shared abstract base
   that owns the timeouts, the retry policy and the send events. Every
-  first-party HTTP driver now extends it and implements `name()`,
+  first-party HTTP driver now extends it and implements `driverName()`,
   `sendRequest()` and, when it has credentials, `configure()`.
 - `SmsSending`, dispatched before a send attempt with the driver name and the
   payload.

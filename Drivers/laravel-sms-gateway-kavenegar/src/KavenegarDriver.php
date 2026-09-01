@@ -23,7 +23,7 @@ final class KavenegarDriver extends SmsGatewayDriver
         self::requireConfigured($apiKey, 'Kavenegar API key');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'kavenegar';
     }

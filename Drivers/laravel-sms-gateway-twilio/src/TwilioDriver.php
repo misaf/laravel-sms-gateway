@@ -25,7 +25,7 @@ final class TwilioDriver extends SmsGatewayDriver
         self::requireConfigured($authToken, 'Twilio auth token');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'twilio';
     }

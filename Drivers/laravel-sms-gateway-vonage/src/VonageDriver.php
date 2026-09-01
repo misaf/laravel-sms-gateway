@@ -25,7 +25,7 @@ final class VonageDriver extends SmsGatewayDriver
         self::requireConfigured($apiSecret, 'Vonage API secret');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'vonage';
     }

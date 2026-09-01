@@ -23,7 +23,7 @@ final class MessageBirdDriver extends SmsGatewayDriver
         self::requireConfigured($accessKey, 'MessageBird access key');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'messagebird';
     }

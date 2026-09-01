@@ -23,7 +23,7 @@ final class GhasedakDriver extends SmsGatewayDriver
         self::requireConfigured($apiKey, 'Ghasedak API key');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'ghasedak';
     }

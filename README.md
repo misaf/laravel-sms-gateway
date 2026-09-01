@@ -219,7 +219,7 @@ final class CustomDriver extends SmsGatewayDriver
         parent::__construct($baseUrl, $serverTimeout, $clientTimeout, $retryTimes, $retrySleepMilliseconds);
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'custom';
     }
@@ -276,7 +276,7 @@ $this->callAfterResolving(
 ```
 
 The registration key is the name used by `SmsGateway::driver('custom')`. The
-driver reads its own configuration and reports its own `name()` on the events,
+driver reads its own configuration and reports its own `driverName()` on the events,
 so nothing is inferred from the registration key.
 
 ## Contributing

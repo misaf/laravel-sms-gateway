@@ -25,7 +25,7 @@ final class PlivoDriver extends SmsGatewayDriver
         self::requireConfigured($authToken, 'Plivo auth token');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'plivo';
     }

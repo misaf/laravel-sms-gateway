@@ -23,7 +23,7 @@ final class SmsIrDriver extends SmsGatewayDriver
         self::requireConfigured($apiKey, 'SMS.ir API key');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'smsir';
     }

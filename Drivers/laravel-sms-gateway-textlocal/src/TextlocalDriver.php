@@ -23,7 +23,7 @@ final class TextlocalDriver extends SmsGatewayDriver
         self::requireConfigured($apiKey, 'Textlocal API key');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'textlocal';
     }

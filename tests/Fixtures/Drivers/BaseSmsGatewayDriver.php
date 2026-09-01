@@ -23,7 +23,7 @@ final class BaseSmsGatewayDriver extends SmsGatewayDriver
         self::requireConfigured($apiKey, 'API key');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'base';
     }

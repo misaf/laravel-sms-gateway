@@ -25,7 +25,7 @@ final class IppanelDriver extends SmsGatewayDriver
         self::requireConfigured($password, 'Ippanel password');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'ippanel';
     }

@@ -26,7 +26,7 @@ final class NullSmsGatewayDriver implements SmsGateway
      */
     public function send(array $data): Response
     {
-        SmsSending::dispatch($this->name(), $data);
+        SmsSending::dispatch($this->driverName(), $data);
 
         $request = new Request(new PsrRequest(
             'POST',
@@ -40,12 +40,12 @@ final class NullSmsGatewayDriver implements SmsGateway
             'data' => $data,
         ])));
 
-        SmsSent::dispatch($this->name(), $request, $response);
+        SmsSent::dispatch($this->driverName(), $request, $response);
 
         return $response;
     }
 
-    private function name(): string
+    private function driverName(): string
     {
         return 'null';
     }

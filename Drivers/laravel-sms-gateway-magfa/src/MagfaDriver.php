@@ -25,7 +25,7 @@ final class MagfaDriver extends SmsGatewayDriver
         self::requireConfigured($password, 'Magfa password');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'magfa';
     }

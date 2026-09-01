@@ -40,14 +40,14 @@ abstract class SmsGatewayDriver implements SmsGateway
      */
     public function send(array $data): Response
     {
-        SmsSending::dispatch($this->name(), $data);
+        SmsSending::dispatch($this->driverName(), $data);
 
         try {
             return $this->sendRequest($data);
         } catch (Throwable $exception) {
             // Only a gateway that was never reached lands here; a rejected send
             // has a response and is reported on the response path instead.
-            SmsSendUnreachable::dispatch($this->name(), $exception);
+            SmsSendUnreachable::dispatch($this->driverName(), $exception);
 
             throw $exception;
         }
@@ -68,18 +68,18 @@ abstract class SmsGatewayDriver implements SmsGateway
         return $this->configure($request)
             ->afterResponse(function (Response $response, Request $request): Response {
                 if ($response->successful()) {
-                    SmsSent::dispatch($this->name(), $request, $response);
+                    SmsSent::dispatch($this->driverName(), $request, $response);
 
                     return $response;
                 }
 
-                SmsSendFailed::dispatch($this->name(), $request, $response);
+                SmsSendFailed::dispatch($this->driverName(), $request, $response);
 
                 return $response;
             });
     }
 
-    abstract protected function name(): string;
+    abstract protected function driverName(): string;
 
     /**
      * @param array<string, mixed> $data

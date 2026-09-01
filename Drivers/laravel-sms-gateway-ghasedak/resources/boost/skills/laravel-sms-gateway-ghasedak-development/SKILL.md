@@ -22,7 +22,7 @@ This package is developed inside the `misaf/laravel-sms-gateway` monorepo at
   service provider reads them all from `sms-gateway-ghasedak.*`, timeouts and retry included.
 - The driver extends `Misaf\LaravelSmsGateway\Drivers\SmsGatewayDriver`, which
   owns the timeouts, the retry policy and the `SmsSending`/`SmsSent`/
-  `SmsSendFailed`/`SmsSendUnreachable` events. Implement `name()`, `sendRequest()`
+  `SmsSendFailed`/`SmsSendUnreachable` events. Implement `driverName()`, `sendRequest()`
   and, for credentials, `configure()`. The base URL comes from the config file,
   which is the only place it is defined.
 - Guard the base URL and each credential with `self::requireConfigured()` in the

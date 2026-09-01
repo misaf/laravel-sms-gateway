@@ -25,7 +25,7 @@ final class SunwayDriver extends SmsGatewayDriver
         self::requireConfigured($password, 'Sunway password');
     }
 
-    protected function name(): string
+    protected function driverName(): string
     {
         return 'sunway';
     }
