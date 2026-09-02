@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
@@ -14,7 +15,7 @@ test('can send request through smsir driver', function (): void {
         'https://api.sms.ir/v1/send/bulk' => Http::response([
             'status'  => 1,
             'message' => 'ok',
-        ], 200),
+        ], Response::HTTP_OK),
     ]);
 
     $response = SmsGateway::driver()->send([
@@ -37,7 +38,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-smsir.base_url', 'https://services-override.example.test/v1/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['status' => 1], 200),
+        'https://services-override.example.test/*' => Http::response(['status' => 1], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([

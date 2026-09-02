@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
@@ -14,7 +15,7 @@ test('can send SMS via Twilio driver', function (): void {
     $response = ['sid' => 'SM123', 'status' => 'queued'];
 
     Http::fake([
-        'https://api.twilio.com/2010-04-01/Accounts/AC123/Messages.json' => Http::response($response, 201),
+        'https://api.twilio.com/2010-04-01/Accounts/AC123/Messages.json' => Http::response($response, Response::HTTP_CREATED),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -40,7 +41,7 @@ test('twilio driver scopes the default gateway to the configured account', funct
     config()->set('sms-gateway-twilio.auth_token', 'twilio-auth-token');
 
     Http::fake([
-        'https://api.twilio.com/2010-04-01/Accounts/AC456/Messages.json' => Http::response(['ok' => true], 200),
+        'https://api.twilio.com/2010-04-01/Accounts/AC456/Messages.json' => Http::response(['ok' => true], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver('twilio')->send([
@@ -60,7 +61,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-twilio.base_url', 'https://services-override.example.test/2010-04-01/Accounts/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['status' => 'queued'], 201),
+        'https://services-override.example.test/*' => Http::response(['status' => 'queued'], Response::HTTP_CREATED),
     ]);
 
     SmsGateway::driver()->send([

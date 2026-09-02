@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
@@ -14,7 +15,7 @@ test('can send SMS via Magfa driver', function (): void {
     $response = ['status' => 0, 'messages' => [['id' => 123]]];
 
     Http::fake([
-        'https://sms.magfa.com/api/http/sms/v2/send' => Http::response($response, 200),
+        'https://sms.magfa.com/api/http/sms/v2/send' => Http::response($response, Response::HTTP_OK),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -40,7 +41,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-magfa.base_url', 'https://services-override.example.test/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['status' => 0], 200),
+        'https://services-override.example.test/*' => Http::response(['status' => 0], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([

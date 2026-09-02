@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
@@ -13,7 +14,7 @@ test('can send simple SMS via Ghasedak driver', function (): void {
     $response = ['result' => ['code' => 200, 'message' => 'success'], 'items' => '2578793735'];
 
     Http::fake([
-        'https://api.ghasedak.me/v2/sms/send/simple' => Http::response($response, 200),
+        'https://api.ghasedak.me/v2/sms/send/simple' => Http::response($response, Response::HTTP_OK),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -37,7 +38,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-ghasedak.base_url', 'https://services-override.example.test/v2/');
 
     Http::fake([
-        'https://services-override.example.test/v2/sms/send/simple' => Http::response(['result' => ['code' => 200]], 200),
+        'https://services-override.example.test/v2/sms/send/simple' => Http::response(['result' => ['code' => 200]], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([

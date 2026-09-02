@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Contracts\SmsGateway as SmsGatewayContract;
@@ -36,7 +37,7 @@ describe('driver resolution', function (): void {
             'receptor' => '09123456789',
         ]);
 
-        expect($response->status())->toBe(200)
+        expect($response->status())->toBe(Response::HTTP_OK)
             ->and($response->json('sent'))->toBeTrue()
             ->and($response->json('data.receptor'))->toBe('09123456789');
     });
@@ -83,7 +84,7 @@ describe('CustomSmsGatewayDriver', function (): void {
 
     test('sends messages', function (): void {
         Http::fake([
-            'https://custom.example.com/messages' => Http::response(['ok' => true], 200),
+            'https://custom.example.com/messages' => Http::response(['ok' => true], Response::HTTP_OK),
         ]);
 
         $response = SmsGateway::driver('custom')->send([
@@ -106,7 +107,7 @@ describe('CustomSmsGatewayDriver', function (): void {
         ]);
 
         Http::fake([
-            'https://custom.example.com/messages' => Http::response(['message_id' => 'sms-123'], 202),
+            'https://custom.example.com/messages' => Http::response(['message_id' => 'sms-123'], Response::HTTP_ACCEPTED),
         ]);
 
         SmsGateway::driver('custom')->request()
@@ -120,7 +121,7 @@ describe('CustomSmsGatewayDriver', function (): void {
                 && 'POST' === $event->request->method()
                 && 'https://custom.example.com/messages' === $event->request->url()
                 && 'Hello from request test' === $event->request['message']
-                && 202 === $event->response->status()
+                && Response::HTTP_ACCEPTED === $event->response->status()
                 && 'sms-123' === $event->response->json('message_id');
         });
     });
@@ -131,7 +132,7 @@ describe('CustomSmsGatewayDriver', function (): void {
         Http::fake(function (Request $request, array $options) use (&$capturedOptions) {
             $capturedOptions = $options;
 
-            return Http::response(['ok' => true], 200);
+            return Http::response(['ok' => true], Response::HTTP_OK);
         });
 
         SmsGateway::driver('custom')->send([
@@ -151,7 +152,7 @@ describe('driver construction', function (): void {
         Http::fake(function (Request $request, array $options) use (&$capturedOptions) {
             $capturedOptions = $options;
 
-            return Http::response(['ok' => true], 200);
+            return Http::response(['ok' => true], Response::HTTP_OK);
         });
 
         SmsGateway::extend('configured', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
@@ -172,7 +173,7 @@ describe('driver construction', function (): void {
         config()->set('sms-gateway.default', 'overrideable');
 
         Http::fake([
-            'https://services-override.example.test/v1/messages' => Http::response(['ok' => true], 200),
+            'https://services-override.example.test/v1/messages' => Http::response(['ok' => true], Response::HTTP_OK),
         ]);
 
         SmsGateway::extend('overrideable', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
@@ -193,8 +194,8 @@ describe('driver construction', function (): void {
 
     test('registers the same driver class under multiple names with separate config', function (): void {
         Http::fake([
-            'https://a.example.test/messages' => Http::response(['ok' => true], 200),
-            'https://b.example.test/messages' => Http::response(['ok' => true], 200),
+            'https://a.example.test/messages' => Http::response(['ok' => true], Response::HTTP_OK),
+            'https://b.example.test/messages' => Http::response(['ok' => true], Response::HTTP_OK),
         ]);
 
         SmsGateway::extend('custom-a', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
@@ -219,7 +220,7 @@ describe('driver construction', function (): void {
         ]);
 
         Http::fake([
-            'https://legacy.example.test/messages' => Http::response(['ok' => true], 200),
+            'https://legacy.example.test/messages' => Http::response(['ok' => true], Response::HTTP_OK),
         ]);
 
         SmsGateway::extend('modern', fn(): SmsGatewayContract => new CustomSmsGatewayDriver(
@@ -245,24 +246,24 @@ describe('retry policy', function (): void {
     test('retries a gateway server error and returns the eventual success', function (): void {
         Http::fake([
             'https://custom.example.com/*' => Http::sequence()
-                ->push(['error' => 'busy'], 500)
-                ->push(['ok' => true], 200),
+                ->push(['error' => 'busy'], Response::HTTP_INTERNAL_SERVER_ERROR)
+                ->push(['ok' => true], Response::HTTP_OK),
         ]);
 
         $response = SmsGateway::driver('custom')->send(['message' => 'Hello']);
 
-        expect($response->status())->toBe(200);
+        expect($response->status())->toBe(Response::HTTP_OK);
         Http::assertSentCount(2);
     });
 
     test('does not retry a client error such as a rejected credential', function (): void {
         Http::fake([
-            'https://custom.example.com/*' => Http::response(['error' => 'unauthorized'], 401),
+            'https://custom.example.com/*' => Http::response(['error' => 'unauthorized'], Response::HTTP_UNAUTHORIZED),
         ]);
 
         $response = SmsGateway::driver('custom')->send(['message' => 'Hello']);
 
-        expect($response->status())->toBe(401);
+        expect($response->status())->toBe(Response::HTTP_UNAUTHORIZED);
         Http::assertSentCount(1);
     });
 });

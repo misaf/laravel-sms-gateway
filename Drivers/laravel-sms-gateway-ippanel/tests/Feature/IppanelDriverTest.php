@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Uri;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
@@ -15,7 +16,7 @@ test('ippanel driver sends credentials as query parameters', function (): void {
     $response = ['status' => 'ok'];
 
     Http::fake([
-        'https://ippanel.com/services.jspd*' => Http::response($response, 200),
+        'https://ippanel.com/services.jspd*' => Http::response($response, Response::HTTP_OK),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -46,7 +47,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-ippanel.base_url', 'https://services-override.example.test/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['status' => 'ok'], 200),
+        'https://services-override.example.test/*' => Http::response(['status' => 'ok'], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([

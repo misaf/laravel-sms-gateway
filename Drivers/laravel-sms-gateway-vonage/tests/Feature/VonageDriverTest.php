@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Uri;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
@@ -15,7 +16,7 @@ test('can send SMS via Vonage driver', function (): void {
     $response = ['message-count' => '1', 'messages' => [['status' => '0']]];
 
     Http::fake([
-        'https://rest.nexmo.com/*' => Http::response($response, 200),
+        'https://rest.nexmo.com/*' => Http::response($response, Response::HTTP_OK),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -44,7 +45,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-vonage.base_url', 'https://services-override.example.test/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['message-count' => '1'], 200),
+        'https://services-override.example.test/*' => Http::response(['message-count' => '1'], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([

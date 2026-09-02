@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
@@ -13,7 +14,7 @@ test('can send request through kavenegar driver', function (): void {
     Http::fake([
         'https://api.kavenegar.com/v1/test-api-key/sms/send.json' => Http::response([
             'return' => ['status' => 200, 'message' => 'success'],
-        ], 200),
+        ], Response::HTTP_OK),
     ]);
 
     $response = SmsGateway::driver()->send([
@@ -36,7 +37,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-kavenegar.base_url', 'https://services-override.example.test/v1/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['return' => ['status' => 200]], 200),
+        'https://services-override.example.test/*' => Http::response(['return' => ['status' => 200]], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([

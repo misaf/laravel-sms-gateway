@@ -8,6 +8,7 @@ use GuzzleHttp\Psr7\Request as PsrRequest;
 use GuzzleHttp\Psr7\Response as PsrResponse;
 use Illuminate\Http\Client\Request;
 use Illuminate\Http\Client\Response;
+use Illuminate\Http\Response as HttpResponse;
 use Misaf\LaravelSmsGateway\Contracts\SmsGateway;
 use Misaf\LaravelSmsGateway\Events\SmsSending;
 use Misaf\LaravelSmsGateway\Events\SmsSent;
@@ -35,7 +36,7 @@ final class NullSmsGatewayDriver implements SmsGateway
             $this->encode($data),
         ));
 
-        $response = new Response(new PsrResponse(200, ['Content-Type' => 'application/json'], $this->encode([
+        $response = new Response(new PsrResponse(HttpResponse::HTTP_OK, ['Content-Type' => 'application/json'], $this->encode([
             'sent' => true,
             'data' => $data,
         ])));

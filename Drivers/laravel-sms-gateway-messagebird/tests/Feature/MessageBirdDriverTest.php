@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
@@ -13,7 +14,7 @@ test('can send SMS via MessageBird driver', function (): void {
     $response = ['id' => 'message-id', 'status' => 'sent'];
 
     Http::fake([
-        'https://rest.messagebird.com/messages' => Http::response($response, 201),
+        'https://rest.messagebird.com/messages' => Http::response($response, Response::HTTP_CREATED),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -39,7 +40,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-messagebird.base_url', 'https://services-override.example.test/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['status' => 'sent'], 201),
+        'https://services-override.example.test/*' => Http::response(['status' => 'sent'], Response::HTTP_CREATED),
     ]);
 
     SmsGateway::driver()->send([

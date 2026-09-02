@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Uri;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
@@ -13,7 +14,7 @@ test('sunway driver sends credentials as query parameters', function (): void {
     config()->set('sms-gateway-sunway.password', 'password');
 
     Http::fake([
-        'https://sms.sunwaysms.com/smsws/HttpService.ashx*' => Http::response(['status' => 'ok'], 200),
+        'https://sms.sunwaysms.com/smsws/HttpService.ashx*' => Http::response(['status' => 'ok'], Response::HTTP_OK),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -41,7 +42,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-sunway.base_url', 'https://services-override.example.test/smsws/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['status' => 'ok'], 200),
+        'https://services-override.example.test/*' => Http::response(['status' => 'ok'], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
 
@@ -14,7 +15,7 @@ test('can send SMS via Plivo driver', function (): void {
     $response = ['message_uuid' => ['uuid'], 'api_id' => 'api-id'];
 
     Http::fake([
-        'https://api.plivo.com/v1/Account/MA123/Message/' => Http::response($response, 202),
+        'https://api.plivo.com/v1/Account/MA123/Message/' => Http::response($response, Response::HTTP_ACCEPTED),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -41,7 +42,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-plivo.base_url', 'https://services-override.example.test/v1/Account/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['api_id' => 'api-id'], 202),
+        'https://services-override.example.test/*' => Http::response(['api_id' => 'api-id'], Response::HTTP_ACCEPTED),
     ]);
 
     SmsGateway::driver()->send([

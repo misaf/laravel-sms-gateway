@@ -21,7 +21,7 @@ abstract class TestCase extends TestbenchTestCase
     }
 
     /**
-     * @param  Application  $app
+     * @param Application $app
      * @return list<class-string>
      */
     protected function getPackageProviders($app): array

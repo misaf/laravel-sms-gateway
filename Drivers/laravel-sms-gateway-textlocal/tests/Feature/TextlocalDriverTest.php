@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Http\Client\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Uri;
 use Misaf\LaravelSmsGateway\Facades\SmsGateway;
@@ -14,7 +15,7 @@ test('can send SMS via Textlocal driver', function (): void {
     $response = ['status' => 'success'];
 
     Http::fake([
-        'https://api.txtlocal.com/*' => Http::response($response, 200),
+        'https://api.txtlocal.com/*' => Http::response($response, Response::HTTP_OK),
     ]);
 
     $result = SmsGateway::driver()->send([
@@ -42,7 +43,7 @@ test('prefers the base URL configured in the driver config over the driver defau
     config()->set('sms-gateway-textlocal.base_url', 'https://services-override.example.test/');
 
     Http::fake([
-        'https://services-override.example.test/*' => Http::response(['status' => 'success'], 200),
+        'https://services-override.example.test/*' => Http::response(['status' => 'success'], Response::HTTP_OK),
     ]);
 
     SmsGateway::driver()->send([
