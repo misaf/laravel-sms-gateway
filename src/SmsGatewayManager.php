@@ -18,7 +18,7 @@ final class SmsGatewayManager extends Manager
     {
         $default = Config::get('sms-gateway.default');
 
-        return is_string($default) && $default !== '' ? $default : 'null';
+        return is_string($default) && '' !== $default ? $default : 'null';
     }
 
     protected function createNullDriver(): SmsGateway
